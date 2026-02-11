@@ -1,0 +1,1 @@
+ALTER TABLE `shows` ADD `is_featured` integer DEFAULT false;

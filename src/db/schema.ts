@@ -1,0 +1,107 @@
+import { sqliteTable, text, integer, real, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { sql } from 'drizzle-orm';
+
+export const shows = sqliteTable('shows', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  slug: text('slug').notNull().unique(),
+  name: text('name').notNull(),
+  description: text('description'),
+  venueName: text('venue_name'),
+  address: text('address'),
+  city: text('city').notNull(),
+  state: text('state').notNull(),
+  stateFullName: text('state_full_name'),
+  zipCode: text('zip_code'),
+  startDate: text('start_date').notNull(),
+  endDate: text('end_date'),
+  startTime: text('start_time'),
+  endTime: text('end_time'),
+  admissionPrice: text('admission_price'),
+  organizerName: text('organizer_name'),
+  websiteUrl: text('website_url'),
+  imageUrl: text('image_url'),
+  eventType: text('event_type').default('card_show'),
+  isPokemonSpecific: integer('is_pokemon_specific', { mode: 'boolean' }).default(false),
+  sourceId: text('source_id'),
+  sourceName: text('source_name').notNull(),
+  sourceUrl: text('source_url'),
+  createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+  updatedAt: text('updated_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+  lastScrapedAt: text('last_scraped_at'),
+  isFeatured: integer('is_featured', { mode: 'boolean' }).default(false),
+  isActive: integer('is_active', { mode: 'boolean' }).default(true),
+}, (table) => [
+  index('shows_state_idx').on(table.state),
+  index('shows_start_date_idx').on(table.startDate),
+  index('shows_state_start_date_idx').on(table.state, table.startDate),
+  uniqueIndex('shows_source_dedup_idx').on(table.sourceName, table.sourceId),
+]);
+
+export const cardOfTheDay = sqliteTable('card_of_the_day', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  featuredDate: text('featured_date').notNull().unique(),
+  pokemonTcgId: text('pokemon_tcg_id').notNull(),
+  cardName: text('card_name').notNull(),
+  setName: text('set_name').notNull(),
+  setSeries: text('set_series'),
+  rarity: text('rarity'),
+  artist: text('artist'),
+  cardNumber: text('card_number'),
+  types: text('types'),
+  hp: text('hp'),
+  flavorText: text('flavor_text'),
+  imageSmall: text('image_small').notNull(),
+  imageLarge: text('image_large').notNull(),
+  tcgPlayerUrl: text('tcg_player_url'),
+  tcgPlayerPrice: real('tcg_player_price'),
+  priceLow: real('price_low'),
+  priceMid: real('price_mid'),
+  priceHigh: real('price_high'),
+  priceDirectLow: real('price_direct_low'),
+  priceVariant: text('price_variant'),
+  createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+}, (table) => [
+  uniqueIndex('cotd_featured_date_idx').on(table.featuredDate),
+]);
+
+export const newsletterEmails = sqliteTable('newsletter_emails', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  email: text('email').notNull().unique(),
+  subscribedAt: text('subscribed_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+});
+
+export const ebayListings = sqliteTable('ebay_listings', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  searchQuery: text('search_query').notNull(),
+  ebayItemId: text('ebay_item_id').notNull(),
+  title: text('title').notNull(),
+  price: real('price'),
+  currency: text('currency').default('USD'),
+  imageUrl: text('image_url'),
+  itemUrl: text('item_url').notNull(),
+  condition: text('condition'),
+  seller: text('seller'),
+  listingType: text('listing_type'),
+  endTime: text('end_time'),
+  categorySlug: text('category_slug'),
+  cardSlug: text('card_slug'),
+  fetchedAt: text('fetched_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+}, (table) => [
+  index('listings_search_query_idx').on(table.searchQuery),
+  index('listings_category_slug_idx').on(table.categorySlug),
+  index('listings_card_slug_idx').on(table.cardSlug),
+  index('listings_fetched_at_idx').on(table.fetchedAt),
+  uniqueIndex('listings_item_dedup_idx').on(table.ebayItemId),
+]);
+
+export const scraperRuns = sqliteTable('scraper_runs', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  scraperName: text('scraper_name').notNull(),
+  status: text('status').notNull(),
+  showsFound: integer('shows_found').default(0),
+  showsCreated: integer('shows_created').default(0),
+  showsUpdated: integer('shows_updated').default(0),
+  errorMessage: text('error_message'),
+  durationMs: integer('duration_ms'),
+  runAt: text('run_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+});

@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/scrape-shows",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/card-of-the-day",
+      "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/refresh-listings",
+      "schedule": "0 */6 * * *"
+    }
+  ]
+}
