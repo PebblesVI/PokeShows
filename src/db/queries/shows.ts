@@ -140,6 +140,14 @@ export async function getAllCities() {
     .orderBy(asc(shows.state), asc(shows.city));
 }
 
+export async function getActiveShowCount(): Promise<number> {
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const result = await db.select({ count: sql<number>`count(*)` })
+    .from(shows)
+    .where(and(eq(shows.isActive, true), gte(shows.startDate, today)));
+  return result[0]?.count ?? 0;
+}
+
 export async function deactivatePastShows() {
   const today = format(new Date(), 'yyyy-MM-dd');
   // Deactivate shows where the effective end date (endDate or startDate) is before today

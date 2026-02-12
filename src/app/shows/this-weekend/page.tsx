@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { Metadata } from 'next';
-import { ShowList } from '@/components/shows/show-list';
+import { WeekendFilter } from '@/components/shows/weekend-filter';
 import { JsonLdItemList } from '@/components/seo/json-ld-item-list';
 import { getWeekendShows } from '@/db/queries/shows';
 import { format, nextSaturday, isSaturday, isSunday } from 'date-fns';
@@ -63,7 +63,7 @@ export default async function ThisWeekendPage() {
       </p>
 
       {shows.length > 0 && (
-        <ShowList shows={shows} />
+        <WeekendFilter shows={shows} />
       )}
 
       <JsonLdItemList

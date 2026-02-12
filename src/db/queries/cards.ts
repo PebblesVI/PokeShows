@@ -1,6 +1,6 @@
 import { db } from '@/db';
-import { cardOfTheDay } from '@/db/schema';
-import { desc, lte } from 'drizzle-orm';
+import { cardOfTheDay, cardPriceHistory } from '@/db/schema';
+import { asc, desc, eq, lte } from 'drizzle-orm';
 import { format } from 'date-fns';
 
 export async function getCardOfTheDay() {
@@ -16,4 +16,11 @@ export async function getCardArchive(limit: number = 30) {
     .from(cardOfTheDay)
     .orderBy(desc(cardOfTheDay.featuredDate))
     .limit(limit);
+}
+
+export async function getCardPriceHistory(pokemonTcgId: string) {
+  return db.select()
+    .from(cardPriceHistory)
+    .where(eq(cardPriceHistory.pokemonTcgId, pokemonTcgId))
+    .orderBy(asc(cardPriceHistory.recordedDate));
 }

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { cardOfTheDay } from '@/db/schema';
-import { eq } from 'drizzle-orm';
-import { getRandomCard } from '@/lib/pokemon-tcg';
+import { cardOfTheDay, cardPriceHistory } from '@/db/schema';
+import { desc, eq } from 'drizzle-orm';
+import { getRandomCard, getCardById } from '@/lib/pokemon-tcg';
 import { format } from 'date-fns';
 
 export const dynamic = 'force-dynamic';
@@ -84,6 +84,59 @@ export async function GET(request: NextRequest) {
     priceDirectLow,
     priceVariant,
   });
+
+  // Record price history for today's card
+  if (marketPrice != null) {
+    await db.insert(cardPriceHistory).values({
+      pokemonTcgId: card.id,
+      variant: priceVariant,
+      priceLow,
+      priceMid,
+      priceHigh,
+      priceMarket: marketPrice,
+      priceDirectLow,
+      recordedDate: today,
+    }).onConflictDoNothing();
+  }
+
+  // Refresh prices for recent featured cards
+  try {
+    const recentCards = await db.select({
+      pokemonTcgId: cardOfTheDay.pokemonTcgId,
+    })
+      .from(cardOfTheDay)
+      .orderBy(desc(cardOfTheDay.featuredDate))
+      .limit(30);
+
+    for (const recentCard of recentCards) {
+      try {
+        const freshCard = await getCardById(recentCard.pokemonTcgId);
+        if (freshCard?.tcgplayer?.prices) {
+          const priceKeys = Object.keys(freshCard.tcgplayer.prices);
+          if (priceKeys.length > 0) {
+            const bestKey = variantPreference.find(k => priceKeys.includes(k)) ?? priceKeys[0];
+            const prices = freshCard.tcgplayer.prices[bestKey];
+            if (prices) {
+              await db.insert(cardPriceHistory).values({
+                pokemonTcgId: recentCard.pokemonTcgId,
+                variant: bestKey,
+                priceLow: prices.low ?? null,
+                priceMid: prices.mid ?? null,
+                priceHigh: prices.high ?? null,
+                priceMarket: prices.market ?? null,
+                priceDirectLow: prices.directLow ?? null,
+                recordedDate: today,
+              }).onConflictDoNothing();
+            }
+          }
+        }
+      } catch {
+        // Skip individual card failures
+      }
+    }
+  } catch {
+    // Don't fail the whole cron if price refresh fails
+  }
 
   return NextResponse.json({ success: true, card: card.name });
 }

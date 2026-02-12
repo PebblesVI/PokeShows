@@ -150,3 +150,40 @@ export async function getCardsBySet(setId: string, limit = 50): Promise<PokemonT
   const data: ApiResponse = await response.json();
   return data.data || [];
 }
+
+export async function getRandomHoloCard(): Promise<PokemonTcgCard> {
+  // First get total count of holo cards
+  const countParams = new URLSearchParams({
+    q: 'rarity:"Rare Holo" OR rarity:"Rare Holo EX" OR rarity:"Rare Holo GX" OR rarity:"Rare Holo V" OR rarity:"Rare Holo VMAX" OR rarity:"Rare Holo VSTAR"',
+    pageSize: '1',
+    select: 'id',
+  });
+
+  const countResponse = await fetch(`${API_BASE}/cards?${countParams}`, {
+    headers: getHeaders(),
+  });
+  const countData: ApiResponse = await countResponse.json();
+  const totalCount = countData.totalCount;
+
+  if (totalCount === 0) {
+    throw new Error('No holo cards found');
+  }
+
+  const randomPage = Math.floor(Math.random() * totalCount) + 1;
+  const params = new URLSearchParams({
+    q: 'rarity:"Rare Holo" OR rarity:"Rare Holo EX" OR rarity:"Rare Holo GX" OR rarity:"Rare Holo V" OR rarity:"Rare Holo VMAX" OR rarity:"Rare Holo VSTAR"',
+    page: String(randomPage),
+    pageSize: '1',
+  });
+
+  const response = await fetch(`${API_BASE}/cards?${params}`, {
+    headers: getHeaders(),
+  });
+  const data: ApiResponse = await response.json();
+
+  if (!data.data || data.data.length === 0) {
+    throw new Error('No holo card returned from API');
+  }
+
+  return data.data[0];
+}

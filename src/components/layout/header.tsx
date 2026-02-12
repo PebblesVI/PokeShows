@@ -6,7 +6,7 @@ const navLinks = [
   { href: "/shows/this-weekend", label: "This Weekend" },
   { href: "/card-of-the-day", label: "Card of the Day" },
   { href: "/buy", label: "Buy Cards" },
-  { href: "/shop", label: "Shop" },
+  { href: "/buy/category/accessories", label: "Accessories" },
   { href: "/blog", label: "Blog" },
 ] as const
 

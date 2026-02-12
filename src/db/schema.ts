@@ -105,3 +105,19 @@ export const scraperRuns = sqliteTable('scraper_runs', {
   durationMs: integer('duration_ms'),
   runAt: text('run_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 });
+
+export const cardPriceHistory = sqliteTable('card_price_history', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  pokemonTcgId: text('pokemon_tcg_id').notNull(),
+  variant: text('variant'),
+  priceLow: real('price_low'),
+  priceMid: real('price_mid'),
+  priceHigh: real('price_high'),
+  priceMarket: real('price_market'),
+  priceDirectLow: real('price_direct_low'),
+  recordedDate: text('recorded_date').notNull(),
+  createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+}, (table) => [
+  index('cph_card_date_idx').on(table.pokemonTcgId, table.recordedDate),
+  uniqueIndex('cph_card_date_unique_idx').on(table.pokemonTcgId, table.recordedDate),
+]);

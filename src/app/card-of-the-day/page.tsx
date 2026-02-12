@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { Metadata } from 'next';
 import { CardHero } from '@/components/card-of-the-day/card-hero';
 import { CardArchiveList } from '@/components/card-of-the-day/card-archive-list';
+import { CardRoller } from '@/components/card-of-the-day/card-roller';
 import { getCardOfTheDay, getCardArchive } from '@/db/queries/cards';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -48,6 +49,12 @@ export default async function CardOfTheDayPage() {
           </p>
         </div>
       )}
+
+      {/* Card roller section */}
+      <section className="mt-12 pt-12 border-t border-border">
+        <h2 className="text-xl font-semibold mb-6">Roll a Random Card</h2>
+        <CardRoller initialCard={null} />
+      </section>
 
       {archive.length > 1 && (
         <section className="mt-20 pt-12 border-t border-border">

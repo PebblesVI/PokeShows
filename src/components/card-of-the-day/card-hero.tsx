@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { ExternalLink, ShoppingBag } from 'lucide-react';
 import { buildEbaySearchUrl } from '@/lib/ebay';
 import { cardToSlug } from '@/lib/card-slug';
+import { PriceChart } from '@/components/card-of-the-day/price-chart';
 import type { CardOfTheDay } from '@/types/card';
 
 function formatVariant(variant: string): string {
@@ -108,6 +109,7 @@ export function CardHero({ card }: { card: CardOfTheDay }) {
                 View on TCGPlayer <ExternalLink className="h-3 w-3" />
               </a>
             )}
+            <PriceChart pokemonTcgId={card.pokemonTcgId} />
           </div>
         )}
 
