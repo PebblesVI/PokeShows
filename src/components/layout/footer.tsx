@@ -2,9 +2,9 @@ import Link from "next/link"
 
 const quickLinks = [
   { href: "/shows", label: "Shows" },
-  { href: "/shows/this-weekend", label: "This Weekend" },
   { href: "/card-of-the-day", label: "Card of the Day" },
   { href: "/buy", label: "Buy Cards" },
+  { href: "/wishlist", label: "Card Wishlist" },
   { href: "/submit", label: "Submit a Show" },
   { href: "/about", label: "About" },
 ] as const

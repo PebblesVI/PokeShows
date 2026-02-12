@@ -5,6 +5,7 @@ import { ExternalLink, ShoppingBag } from 'lucide-react';
 import { buildEbaySearchUrl } from '@/lib/ebay';
 import { cardToSlug } from '@/lib/card-slug';
 import { PriceChart } from '@/components/card-of-the-day/price-chart';
+import { AddToWishlistButton } from '@/components/wishlist/add-to-wishlist-button';
 import type { CardOfTheDay } from '@/types/card';
 
 function formatVariant(variant: string): string {
@@ -130,6 +131,14 @@ export function CardHero({ card }: { card: CardOfTheDay }) {
             <ShoppingBag className="h-4 w-4" />
             Compare Prices
           </Link>
+          <AddToWishlistButton
+            cardId={card.pokemonTcgId}
+            name={card.cardName}
+            setName={card.setName}
+            imageSmall={card.imageSmall}
+            rarity={card.rarity}
+            size="default"
+          />
         </div>
       </div>
     </div>

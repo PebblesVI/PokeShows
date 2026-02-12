@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { JsonLdWebsite } from "@/components/seo/json-ld-website"
 import { FavoritesProvider } from "@/components/favorites/favorites-provider"
+import { WishlistProvider } from "@/components/wishlist/wishlist-provider"
 import "./globals.css"
 
 const geistSans = Geist({
@@ -93,11 +94,13 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <FavoritesProvider>
-            <div className="relative flex min-h-screen flex-col">
-              <Header />
-              <main className="flex-1">{children}</main>
-              <Footer />
-            </div>
+            <WishlistProvider>
+              <div className="relative flex min-h-screen flex-col">
+                <Header />
+                <main className="flex-1">{children}</main>
+                <Footer />
+              </div>
+            </WishlistProvider>
           </FavoritesProvider>
           <JsonLdWebsite />
         </ThemeProvider>

@@ -3,10 +3,10 @@ import { MobileNav } from "@/components/layout/mobile-nav"
 
 const navLinks = [
   { href: "/shows", label: "Shows" },
-  { href: "/shows/this-weekend", label: "This Weekend" },
   { href: "/card-of-the-day", label: "Card of the Day" },
   { href: "/buy", label: "Buy Cards" },
   { href: "/buy/category/accessories", label: "Accessories" },
+  { href: "/wishlist", label: "Wishlist" },
   { href: "/blog", label: "Blog" },
 ] as const
 

@@ -4,6 +4,7 @@ import { useState, useCallback } from "react"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Dices, Sparkles, ExternalLink, Loader2 } from "lucide-react"
+import { AddToWishlistButton } from "@/components/wishlist/add-to-wishlist-button"
 
 interface RolledCard {
   id: string
@@ -282,16 +283,26 @@ export function CardRoller({
                 </div>
               )}
             </div>
-            {card.tcgPlayerUrl && (
-              <a
-                href={card.tcgPlayerUrl}
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-              >
-                View on TCGPlayer <ExternalLink className="h-3 w-3" />
-              </a>
-            )}
+            <div className="flex flex-wrap items-center gap-3 mt-3">
+              {card.tcgPlayerUrl && (
+                <a
+                  href={card.tcgPlayerUrl}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                >
+                  View on TCGPlayer <ExternalLink className="h-3 w-3" />
+                </a>
+              )}
+              <AddToWishlistButton
+                cardId={card.id}
+                name={card.name}
+                setName={card.setName}
+                imageSmall={card.imageSmall}
+                rarity={card.rarity}
+                size="default"
+              />
+            </div>
           </div>
         </div>
       )}

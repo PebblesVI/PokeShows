@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { US_STATE_NAMES } from '@/lib/constants';
 import { Search } from 'lucide-react';
+import { nextSaturday, isSaturday, isSunday, endOfMonth, format, addDays } from 'date-fns';
 
 interface ShowFiltersProps {
   currentState?: string;
@@ -35,8 +36,74 @@ export function ShowFilters({ currentState, currentFrom, currentTo, currentView,
     updateParams('q', query || null);
   }, [query, updateParams]);
 
+  const getWeekendDates = useCallback(() => {
+    const now = new Date();
+    let sat: Date;
+    if (isSaturday(now)) {
+      sat = now;
+    } else if (isSunday(now)) {
+      sat = nextSaturday(now);
+    } else {
+      sat = nextSaturday(now);
+    }
+    const sun = addDays(sat, 1);
+    return { from: format(sat, 'yyyy-MM-dd'), to: format(sun, 'yyyy-MM-dd') };
+  }, []);
+
+  const getMonthDates = useCallback(() => {
+    const now = new Date();
+    return { from: format(now, 'yyyy-MM-dd'), to: format(endOfMonth(now), 'yyyy-MM-dd') };
+  }, []);
+
+  const setPreset = useCallback((preset: 'all' | 'weekend' | 'month') => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('from');
+    params.delete('to');
+
+    if (preset === 'weekend') {
+      const { from, to } = getWeekendDates();
+      params.set('from', from);
+      params.set('to', to);
+    } else if (preset === 'month') {
+      const { from, to } = getMonthDates();
+      params.set('from', from);
+      params.set('to', to);
+    }
+
+    router.push(`/shows?${params.toString()}`);
+  }, [router, searchParams, getWeekendDates, getMonthDates]);
+
+  // Determine active preset
+  const weekendDates = getWeekendDates();
+  const monthDates = getMonthDates();
+  const activePreset = currentFrom === weekendDates.from && currentTo === weekendDates.to
+    ? 'weekend'
+    : currentFrom === monthDates.from && currentTo === monthDates.to
+      ? 'month'
+      : !currentFrom && !currentTo
+        ? 'all'
+        : null;
+
   return (
     <div className="space-y-4 mb-10">
+      <div className="flex gap-2 mb-4">
+        {[
+          { key: 'all', label: 'All Upcoming' },
+          { key: 'weekend', label: 'This Weekend' },
+          { key: 'month', label: 'This Month' },
+        ].map(({ key, label }) => (
+          <Button
+            key={key}
+            variant={activePreset === key ? 'default' : 'secondary'}
+            size="sm"
+            className="rounded-full"
+            onClick={() => setPreset(key as 'all' | 'weekend' | 'month')}
+          >
+            {label}
+          </Button>
+        ))}
+      </div>
+
       <form onSubmit={handleSearch} className="flex gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
