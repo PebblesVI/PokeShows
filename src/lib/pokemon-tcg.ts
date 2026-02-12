@@ -39,21 +39,52 @@ function getHeaders(): Record<string, string> {
   return headers;
 }
 
-export async function getTotalCardCount(): Promise<number> {
+// Module-level cache for card counts (refreshes once per server restart / ~1h on serverless)
+let cachedTotalCount: number | null = null;
+let cachedHoloCount: number | null = null;
+let countCacheTime = 0;
+const COUNT_CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
+
+async function getCachedTotalCount(): Promise<number> {
+  if (cachedTotalCount && Date.now() - countCacheTime < COUNT_CACHE_TTL) {
+    return cachedTotalCount;
+  }
   const response = await fetch(`${API_BASE}/cards?pageSize=1&select=id`, {
     headers: getHeaders(),
-    next: { revalidate: 86400 },
   });
   const data: ApiResponse = await response.json();
-  return data.totalCount;
+  cachedTotalCount = data.totalCount;
+  countCacheTime = Date.now();
+  return cachedTotalCount;
+}
+
+const HOLO_QUERY = 'rarity:"Rare Holo" OR rarity:"Rare Holo EX" OR rarity:"Rare Holo GX" OR rarity:"Rare Holo V" OR rarity:"Rare Holo VMAX" OR rarity:"Rare Holo VSTAR"';
+
+async function getCachedHoloCount(): Promise<number> {
+  if (cachedHoloCount && Date.now() - countCacheTime < COUNT_CACHE_TTL) {
+    return cachedHoloCount;
+  }
+  const params = new URLSearchParams({ q: HOLO_QUERY, pageSize: '1', select: 'id' });
+  const response = await fetch(`${API_BASE}/cards?${params}`, {
+    headers: getHeaders(),
+  });
+  const data: ApiResponse = await response.json();
+  cachedHoloCount = data.totalCount;
+  return cachedHoloCount;
+}
+
+export async function getTotalCardCount(): Promise<number> {
+  return getCachedTotalCount();
 }
 
 export async function getRandomCard(): Promise<PokemonTcgCard> {
-  const totalCount = await getTotalCardCount();
-  const randomPage = Math.floor(Math.random() * totalCount) + 1;
+  const totalCount = await getCachedTotalCount();
+  // Fetch a batch of 25 from a random page, then pick one — single API call for card data
+  const totalPages = Math.ceil(totalCount / 25);
+  const randomPage = Math.floor(Math.random() * totalPages) + 1;
 
   const response = await fetch(
-    `${API_BASE}/cards?page=${randomPage}&pageSize=1`,
+    `${API_BASE}/cards?page=${randomPage}&pageSize=25`,
     { headers: getHeaders() }
   );
   const data: ApiResponse = await response.json();
@@ -62,7 +93,7 @@ export async function getRandomCard(): Promise<PokemonTcgCard> {
     throw new Error('No card returned from API');
   }
 
-  return data.data[0];
+  return data.data[Math.floor(Math.random() * data.data.length)];
 }
 
 export async function getCardById(id: string): Promise<PokemonTcgCard> {
@@ -152,28 +183,18 @@ export async function getCardsBySet(setId: string, limit = 50): Promise<PokemonT
 }
 
 export async function getRandomHoloCard(): Promise<PokemonTcgCard> {
-  // First get total count of holo cards
-  const countParams = new URLSearchParams({
-    q: 'rarity:"Rare Holo" OR rarity:"Rare Holo EX" OR rarity:"Rare Holo GX" OR rarity:"Rare Holo V" OR rarity:"Rare Holo VMAX" OR rarity:"Rare Holo VSTAR"',
-    pageSize: '1',
-    select: 'id',
-  });
-
-  const countResponse = await fetch(`${API_BASE}/cards?${countParams}`, {
-    headers: getHeaders(),
-  });
-  const countData: ApiResponse = await countResponse.json();
-  const totalCount = countData.totalCount;
+  const totalCount = await getCachedHoloCount();
 
   if (totalCount === 0) {
     throw new Error('No holo cards found');
   }
 
-  const randomPage = Math.floor(Math.random() * totalCount) + 1;
+  const totalPages = Math.ceil(totalCount / 25);
+  const randomPage = Math.floor(Math.random() * totalPages) + 1;
   const params = new URLSearchParams({
-    q: 'rarity:"Rare Holo" OR rarity:"Rare Holo EX" OR rarity:"Rare Holo GX" OR rarity:"Rare Holo V" OR rarity:"Rare Holo VMAX" OR rarity:"Rare Holo VSTAR"',
+    q: HOLO_QUERY,
     page: String(randomPage),
-    pageSize: '1',
+    pageSize: '25',
   });
 
   const response = await fetch(`${API_BASE}/cards?${params}`, {
@@ -185,5 +206,5 @@ export async function getRandomHoloCard(): Promise<PokemonTcgCard> {
     throw new Error('No holo card returned from API');
   }
 
-  return data.data[0];
+  return data.data[Math.floor(Math.random() * data.data.length)];
 }

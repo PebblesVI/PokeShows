@@ -7,16 +7,9 @@ export async function GET(request: NextRequest) {
   const isHolo = request.nextUrl.searchParams.get('holo') === 'true';
 
   try {
-    let card;
-    for (let i = 0; i < 3; i++) {
-      const candidate = isHolo ? await getRandomHoloCard() : await getRandomCard();
-      if (candidate.images?.large) {
-        card = candidate;
-        break;
-      }
-    }
+    const card = isHolo ? await getRandomHoloCard() : await getRandomCard();
 
-    if (!card) {
+    if (!card?.images?.large) {
       return NextResponse.json({ error: 'Failed to find a valid card' }, { status: 500 });
     }
 
