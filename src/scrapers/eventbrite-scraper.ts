@@ -33,6 +33,12 @@ interface EventbriteVenue {
   };
 }
 
+interface EventbriteTicketClass {
+  cost?: { display?: string; value?: number };
+  free?: boolean;
+  name?: string;
+}
+
 interface EventbriteEvent {
   name?: string;
   eid?: string;
@@ -44,11 +50,14 @@ interface EventbriteEvent {
   start_time?: string;
   end_time?: string;
   is_online_event?: boolean;
+  is_free?: boolean;
   primary_venue?: EventbriteVenue;
   primary_organizer?: { name?: string };
   primary_organizer_id?: string;
   image?: { url?: string };
   tickets_url?: string;
+  ticket_classes?: EventbriteTicketClass[];
+  ticket_availability?: { minimum_ticket_price?: { display?: string; value?: number }; is_free?: boolean };
 }
 
 const POKEMON_KEYWORDS = /pok[eé]mon|pikachu|charizard|tcg\b|pokeshows/i;
@@ -169,6 +178,38 @@ export class EventbriteScraper extends BaseScraper {
   }
 
   /**
+   * Extracts admission price from Eventbrite event data.
+   */
+  private extractPrice(event: EventbriteEvent): string | undefined {
+    // Check is_free flag
+    if (event.is_free || event.ticket_availability?.is_free) {
+      return 'Free';
+    }
+
+    // Check ticket_availability for minimum price
+    if (event.ticket_availability?.minimum_ticket_price?.display) {
+      return event.ticket_availability.minimum_ticket_price.display;
+    }
+
+    // Check ticket_classes for the lowest price
+    if (event.ticket_classes && event.ticket_classes.length > 0) {
+      const prices: number[] = [];
+      for (const tc of event.ticket_classes) {
+        if (tc.free) return 'Free';
+        if (tc.cost?.value) prices.push(tc.cost.value);
+      }
+      if (prices.length > 0) {
+        const lowest = Math.min(...prices);
+        // Eventbrite stores cents in some cases
+        const dollars = lowest >= 100 ? (lowest / 100).toFixed(2) : lowest.toFixed(2);
+        return `$${dollars}`;
+      }
+    }
+
+    return undefined;
+  }
+
+  /**
    * Convert an Eventbrite event to our ScrapedShow schema.
    */
   private toScrapedShow(event: EventbriteEvent): ScrapedShow | null {
@@ -204,6 +245,7 @@ export class EventbriteScraper extends BaseScraper {
       endDate: event.end_date && /^\d{4}-\d{2}-\d{2}$/.test(event.end_date) ? event.end_date : undefined,
       startTime: event.start_time,
       endTime: event.end_time,
+      admissionPrice: this.extractPrice(event),
       eventType: this.getEventType(event),
       isPokemonSpecific: this.isPokemonEvent(event),
       sourceId: `eb-${eventId}`,

@@ -66,6 +66,7 @@ export class TcdbScraper extends BaseScraper {
         let venueName: string | undefined;
         let city: string | null = null;
         let stateCode: string | null = null;
+        let admissionPrice: string | undefined;
 
         for (const part of parts) {
           if (part === name) continue;
@@ -97,6 +98,16 @@ export class TcdbScraper extends BaseScraper {
             continue;
           }
 
+          // Try to extract admission/pricing info
+          const priceMatch = part.match(/(?:admission|entry|fee|price)[:\s]*\$?(\d+(?:\.\d{2})?)/i)
+            || part.match(/free\s*(?:admission|entry)/i);
+          if (priceMatch) {
+            admissionPrice = priceMatch[0].toLowerCase().includes('free')
+              ? 'Free'
+              : `$${priceMatch[1]}`;
+            continue;
+          }
+
           // Venue name (appears after date/time, before location)
           if (!venueName && dateStr) {
             venueName = part;
@@ -115,6 +126,7 @@ export class TcdbScraper extends BaseScraper {
           startDate: dateStr,
           startTime,
           endTime,
+          admissionPrice,
           eventType: 'card_show',
           isPokemonSpecific: /pok[eé]mon/i.test(name),
           sourceId: idMatch[1],

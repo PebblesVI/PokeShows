@@ -3,6 +3,7 @@ import { MobileNav } from "@/components/layout/mobile-nav"
 
 const navLinks = [
   { href: "/shows", label: "Shows" },
+  { href: "/shows/near-me", label: "Near Me" },
   { href: "/card-of-the-day", label: "Card of the Day" },
   { href: "/buy", label: "Buy Cards" },
   { href: "/buy/category/accessories", label: "Accessories" },

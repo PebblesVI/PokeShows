@@ -216,6 +216,16 @@ export class CollectaConScraper extends BaseScraper {
           const img = $el.find('img').first();
           const imageUrl = img.attr('src') || undefined;
 
+          // Extract admission price
+          let admissionPrice: string | undefined;
+          const priceMatch = text.match(/(?:tickets?|admission|entry|general)[:\s]*\$(\d+(?:\.\d{2})?)/i)
+            || text.match(/\$(\d+(?:\.\d{2})?)\s*(?:general|admission|entry|per\s*person)/i);
+          if (priceMatch) {
+            admissionPrice = `$${priceMatch[1]}`;
+          } else if (/free\s*(?:admission|entry|event)/i.test(text)) {
+            admissionPrice = 'Free';
+          }
+
           processedNames.add(name.toLowerCase());
 
           const raw: ScrapedShow = {
@@ -224,6 +234,7 @@ export class CollectaConScraper extends BaseScraper {
             state: location.state,
             startDate: parsedDates.startDate,
             endDate: parsedDates.endDate,
+            admissionPrice,
             eventType: 'convention',
             isPokemonSpecific: false,
             sourceId,

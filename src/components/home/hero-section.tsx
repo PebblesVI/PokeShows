@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { MapPin, Calendar } from 'lucide-react';
+import { MapPin, Calendar, Navigation } from 'lucide-react';
 import { nextSaturday, isSaturday, isSunday, addDays, format } from 'date-fns';
 
 export function HeroSection({ showCount }: { showCount: number }) {
@@ -37,6 +37,13 @@ export function HeroSection({ showCount }: { showCount: number }) {
           >
             <Calendar className="h-4 w-4" />
             This Weekend
+          </Link>
+          <Link
+            href="/shows/near-me"
+            className="inline-flex items-center gap-2 px-8 py-3 border border-border rounded-full font-medium hover:border-primary/30 hover:text-primary transition-all duration-200"
+          >
+            <Navigation className="h-4 w-4" />
+            Near Me
           </Link>
         </div>
       </div>

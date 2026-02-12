@@ -1,6 +1,6 @@
 import { db } from '@/db';
 import { shows } from '@/db/schema';
-import { eq, and, gte, lte, lt, asc, ne, or, isNull, like, sql } from 'drizzle-orm';
+import { eq, and, gte, lte, lt, asc, ne, or, isNull, isNotNull, like, sql } from 'drizzle-orm';
 import { format } from 'date-fns';
 
 interface ShowFilters {
@@ -146,6 +146,49 @@ export async function getActiveShowCount(): Promise<number> {
     .from(shows)
     .where(and(eq(shows.isActive, true), gte(shows.startDate, today)));
   return result[0]?.count ?? 0;
+}
+
+export async function getNearbyShows(
+  lat: number,
+  lng: number,
+  radiusMiles: number,
+  limit: number,
+) {
+  const today = format(new Date(), 'yyyy-MM-dd');
+
+  // Haversine formula in SQL — distance in miles
+  // 3959 is Earth's radius in miles
+  const distanceExpr = sql<number>`(
+    3959 * acos(
+      min(1.0, max(-1.0,
+        cos(${lat} * 3.14159265359 / 180.0)
+        * cos(${shows.latitude} * 3.14159265359 / 180.0)
+        * cos((${shows.longitude} - ${lng}) * 3.14159265359 / 180.0)
+        + sin(${lat} * 3.14159265359 / 180.0)
+        * sin(${shows.latitude} * 3.14159265359 / 180.0)
+      ))
+    )
+  )`;
+
+  const results = await db.select({
+    show: shows,
+    distance: distanceExpr.as('distance'),
+  })
+    .from(shows)
+    .where(and(
+      eq(shows.isActive, true),
+      gte(shows.startDate, today),
+      isNotNull(shows.latitude),
+      isNotNull(shows.longitude),
+      sql`${distanceExpr} <= ${radiusMiles}`,
+    ))
+    .orderBy(sql`distance`)
+    .limit(limit);
+
+  return results.map(r => ({
+    ...r.show,
+    distance: Math.round(r.distance * 10) / 10,
+  }));
 }
 
 export async function deactivatePastShows() {

@@ -2,6 +2,7 @@ import { db } from '@/db';
 import { shows, scraperRuns } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { US_STATE_NAMES } from '@/lib/constants';
+import { getCityCoordinates } from '@/lib/city-coordinates';
 import { type ScrapedShow } from './base-scraper';
 import { normalizeShow, generateSlug, deduplicateShows } from './normalizer';
 import { TcdbScraper } from './tcdb-scraper';
@@ -93,6 +94,7 @@ export async function runAllScrapers(): Promise<ScraperResult> {
       const slug = generateSlug(show);
       const stateFullName = US_STATE_NAMES[show.state] || show.state;
       const now = new Date().toISOString();
+      const coords = getCityCoordinates(show.city, show.state);
 
       // Check if a show with this sourceName + sourceId already exists
       const existing = await db.select()
@@ -128,6 +130,8 @@ export async function runAllScrapers(): Promise<ScraperResult> {
             eventType: show.eventType,
             isPokemonSpecific: show.isPokemonSpecific,
             sourceUrl: show.sourceUrl || existing[0].sourceUrl,
+            latitude: coords?.lat ?? existing[0].latitude,
+            longitude: coords?.lng ?? existing[0].longitude,
             updatedAt: now,
             lastScrapedAt: now,
             isActive: true,
@@ -160,6 +164,8 @@ export async function runAllScrapers(): Promise<ScraperResult> {
           sourceId: show.sourceId,
           sourceName: show.sourceName,
           sourceUrl: show.sourceUrl,
+          latitude: coords?.lat,
+          longitude: coords?.lng,
           lastScrapedAt: now,
           isActive: true,
         });

@@ -153,6 +153,22 @@ export class FlippinScraper extends BaseScraper {
 
           if (!city || !state) continue;
 
+          // Extract price from JSON-LD offers
+          let admissionPrice: string | undefined;
+          if (event.offers) {
+            const offers = Array.isArray(event.offers) ? event.offers : [event.offers];
+            for (const offer of offers) {
+              if (offer.price === '0' || offer.price === 0) {
+                admissionPrice = 'Free';
+                break;
+              }
+              if (offer.price) {
+                admissionPrice = `$${offer.price}`;
+                break;
+              }
+            }
+          }
+
           const sourceId = name
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, '-')
@@ -169,6 +185,7 @@ export class FlippinScraper extends BaseScraper {
             endDate,
             venueName,
             address,
+            admissionPrice,
             eventType: 'card_show',
             isPokemonSpecific: false,
             sourceId,
@@ -238,6 +255,16 @@ export class FlippinScraper extends BaseScraper {
             const city = locationMatch[1].trim();
             const state = locationMatch[2];
 
+            // Extract admission price from text
+            let admissionPrice: string | undefined;
+            const priceMatch = text.match(/(?:admission|entry|fee|price|ticket)[:\s]*\$(\d+(?:\.\d{2})?)/i)
+              || text.match(/\$(\d+(?:\.\d{2})?)\s*(?:admission|entry|per\s*person)/i);
+            if (priceMatch) {
+              admissionPrice = `$${priceMatch[1]}`;
+            } else if (/free\s*(?:admission|entry|event)/i.test(text)) {
+              admissionPrice = 'Free';
+            }
+
             const sourceId = name
               .toLowerCase()
               .replace(/[^a-z0-9]+/g, '-')
@@ -258,6 +285,7 @@ export class FlippinScraper extends BaseScraper {
               state,
               startDate: parsedDates.startDate,
               endDate: parsedDates.endDate,
+              admissionPrice,
               eventType: 'card_show',
               isPokemonSpecific: false,
               sourceId,
