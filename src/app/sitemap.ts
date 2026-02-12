@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import type { MetadataRoute } from 'next';
 import { db } from '@/db';
 import { shows, cardOfTheDay } from '@/db/schema';
