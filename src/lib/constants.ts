@@ -53,8 +53,8 @@ export const SHOP_CATEGORIES = [
   {
     slug: 'accessories',
     name: 'Card Supplies & Accessories',
-    description: 'Sleeves, binders, top loaders, and card storage.',
-    searchQuery: 'pokemon card sleeves binder storage',
+    description: 'Sleeves, top loaders, PSA cases, and card protection.',
+    searchQuery: 'pokemon card sleeves top loaders PSA case',
     ebayCategory: '',
   },
   {

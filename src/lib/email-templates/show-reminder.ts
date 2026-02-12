@@ -22,8 +22,8 @@ export function buildReminderEmailHtml(show: Show, daysUntil: number): string {
   const countdownText = daysUntil === 0 ? 'Today!' : daysUntil === 1 ? 'Tomorrow!' : `In ${daysUntil} days!`;
 
   const gearLinks = [
-    { label: 'Card Sleeves & Binders', query: 'pokemon+card+sleeves+binder' },
-    { label: 'Booster Boxes', query: 'pokemon+booster+box+sealed' },
+    { label: 'Card Sleeves & Top Loaders', query: 'pokemon+card+sleeves+top+loaders' },
+    { label: 'PSA Slab Cases', query: 'PSA+graded+card+storage+case' },
   ];
 
   return `<!DOCTYPE html>

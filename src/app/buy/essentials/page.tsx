@@ -25,10 +25,10 @@ const BUNDLES = [
     description: 'Must-haves for a day at the card show.',
     icon: 'ShoppingBag',
     items: [
-      { name: 'Card Binder (9-pocket)', query: 'pokemon card binder 9 pocket', customId: 'essentials-showday-binder' },
-      { name: 'Playmat', query: 'pokemon playmat', customId: 'essentials-showday-playmat' },
-      { name: 'Deck Box', query: 'pokemon deck box', customId: 'essentials-showday-deckbox' },
-      { name: 'Damage Counters', query: 'pokemon damage counters acrylic', customId: 'essentials-showday-counters' },
+      { name: 'Penny Sleeves (200ct)', query: 'penny sleeves pokemon cards 200', customId: 'essentials-showday-sleeves' },
+      { name: 'Top Loaders (100ct)', query: 'ultra pro top loaders 100', customId: 'essentials-showday-toploaders' },
+      { name: 'PSA Slab Storage Case', query: 'PSA graded card storage case', customId: 'essentials-showday-psacase' },
+      { name: 'Magnetic One-Touch Holders', query: 'magnetic card holder 35pt one touch', customId: 'essentials-showday-magnetic' },
     ],
   },
   {
@@ -49,7 +49,7 @@ const BUNDLES = [
     items: [
       { name: 'Elite Trainer Box', query: 'pokemon elite trainer box latest', customId: 'essentials-starter-etb' },
       { name: 'Card Sleeves (100ct)', query: 'pokemon card sleeves 100', customId: 'essentials-starter-sleeves' },
-      { name: 'Storage Binder', query: 'pokemon card binder starter', customId: 'essentials-starter-binder' },
+      { name: 'Top Loaders (25ct)', query: 'ultra pro top loaders 25 pack', customId: 'essentials-starter-toploaders' },
       { name: 'Booster Pack Bundle', query: 'pokemon booster pack bundle', customId: 'essentials-starter-boosters' },
     ],
   },

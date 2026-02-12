@@ -44,14 +44,14 @@ export function WishlistPageContent() {
           No cards in your wishlist yet.
         </p>
         <p className="text-sm text-muted-foreground mb-6">
-          Roll some cards or browse Card of the Day to start building your list!
+          Search for cards to start building your wishlist!
         </p>
         <div className="flex flex-wrap justify-center gap-3">
           <Link
-            href="/card-of-the-day"
+            href="/buy/search"
             className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-full hover:opacity-90 transition-opacity"
           >
-            Card of the Day
+            Search Cards
           </Link>
         </div>
       </div>
@@ -200,10 +200,10 @@ export function WishlistPageContent() {
         <p className="text-sm text-muted-foreground mb-4">Keep your wishlist cards safe with the right supplies.</p>
         <div className="flex flex-wrap gap-2">
           {[
-            { label: 'Card Sleeves', query: 'pokemon card sleeves' },
-            { label: 'Top Loaders', query: 'card top loaders' },
-            { label: 'Card Binder', query: 'pokemon card binder' },
-            { label: 'Magnetic Cases', query: 'magnetic card holder pokemon' },
+            { label: 'Card Sleeves', query: 'pokemon card penny sleeves' },
+            { label: 'Top Loaders', query: 'ultra pro top loaders 35pt' },
+            { label: 'PSA Slab Cases', query: 'PSA graded card storage case' },
+            { label: 'Magnetic Holders', query: 'magnetic card holder 35pt one touch' },
           ].map(({ label, query }) => (
             <a
               key={label}

@@ -164,12 +164,12 @@ export default async function CityShowsPage({
               </li>
               <li>
                 <a
-                  href={buildEbaySearchUrl({ searchQuery: 'pokemon card binder', customId: 'city-guide-binder' })}
+                  href={buildEbaySearchUrl({ searchQuery: 'PSA graded card storage case', customId: 'city-guide-psacase' })}
                   target="_blank"
                   rel="noopener noreferrer nofollow"
                   className="inline-flex items-center gap-1.5 text-primary font-medium hover:underline"
                 >
-                  Card Binder
+                  PSA Slab Cases
                   <ExternalLink className="h-3 w-3" />
                 </a>
               </li>

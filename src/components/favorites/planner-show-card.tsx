@@ -22,8 +22,8 @@ const CHECKLIST_ITEMS = [
 
 const GEAR_LINKS = [
   { label: 'Card Sleeves & Top Loaders', query: 'pokemon card sleeves top loaders' },
-  { label: 'Card Binder', query: 'pokemon card binder' },
-  { label: 'PSA Submission Box', query: 'PSA grading submission box cards' },
+  { label: 'PSA Slab Cases', query: 'PSA graded card storage case' },
+  { label: 'Magnetic One-Touch Holders', query: 'magnetic card holder 35pt one touch' },
   { label: 'Booster Boxes', query: 'pokemon booster box sealed' },
 ];
 

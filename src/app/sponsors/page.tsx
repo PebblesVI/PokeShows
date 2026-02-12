@@ -3,19 +3,19 @@ import { Megaphone, Star, TrendingUp, Users, Mail } from 'lucide-react';
 import { SponsorContactForm } from '@/components/sponsors/sponsor-contact-form';
 
 export const metadata: Metadata = {
-  title: 'Advertise with PokeShows — Reach Pokemon Card Collectors',
-  description: 'Sponsor the Card of the Day, get featured in our vendor directory, or reach collectors through targeted email. Affordable advertising for card shops and sellers.',
+  title: 'Partner with PokeShows — Reach Pokemon Card Collectors',
+  description: 'Partner with PokeShows to reach active Pokemon card collectors. Sponsor the Card of the Day, get featured in our vendor directory, or share deals with our community.',
 };
 
 const SPONSOR_OPTIONS = [
   {
-    title: 'Sponsored Card of the Day',
+    title: 'Card of the Day Spotlight',
     price: '$15–50/day',
     icon: <Star className="h-6 w-6 text-yellow-500" />,
     benefits: [
-      'Your card featured alongside the daily pick',
-      '"Sponsored" badge with your store name and link',
-      'Earn affiliate commission on eBay clicks',
+      'Pick a card to feature alongside the daily spotlight',
+      'Your shop name and link shown to collectors',
+      'Great way to showcase your favorite inventory',
       'Seen by hundreds of active collectors daily',
     ],
   },
@@ -24,21 +24,21 @@ const SPONSOR_OPTIONS = [
     price: '$10–25/month',
     icon: <TrendingUp className="h-6 w-6 text-green-500" />,
     benefits: [
-      'Yellow border + "Featured" badge in vendor directory',
-      'Top placement above all other vendors',
-      'Included in show-specific vendor sections',
-      'Mentioned in pre-show kit emails',
+      'Stand out in the vendor directory with a featured badge',
+      'Show up first when collectors browse vendors',
+      'Listed on individual show pages you attend',
+      'Included in pre-show prep emails to attendees',
     ],
   },
   {
-    title: 'Pre-Show Kit Sponsorship',
+    title: 'Pre-Show Shoutout',
     price: '$5/show',
     icon: <Mail className="h-6 w-6 text-blue-500" />,
     benefits: [
-      'Your store featured in pre-show prep emails',
-      'Reach users 2 days before they attend a show',
-      'High-intent audience about to spend money',
-      'Includes link to your eBay store or website',
+      'Your shop featured in show prep emails',
+      'Reach collectors 2 days before they head to a show',
+      'Perfect for vendors attending specific events',
+      'Includes a link to your store or website',
     ],
   },
 ];
@@ -49,10 +49,10 @@ export default function SponsorsPage() {
       <div className="mb-10 text-center">
         <div className="flex items-center justify-center gap-2 mb-3">
           <Megaphone className="h-7 w-7 text-primary" />
-          <h1 className="text-3xl font-bold">Advertise with PokeShows</h1>
+          <h1 className="text-3xl font-bold">Partner with PokeShows</h1>
         </div>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          Reach thousands of active Pokemon card collectors and show attendees. Affordable advertising options for card shops, eBay sellers, and grading services.
+          Share your cards, deals, and services with collectors who are actively heading to shows. Simple, friendly partnership options for shops and sellers.
         </p>
       </div>
 

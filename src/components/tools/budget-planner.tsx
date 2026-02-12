@@ -9,7 +9,7 @@ const CATEGORIES = [
   { name: 'Admission', percent: 5, description: 'Entry fees for shows', query: '', shopUrl: '' },
   { name: 'Cards & Singles', percent: 45, description: 'Individual cards and sealed product', query: 'pokemon card single rare', shopUrl: '/buy/category/singles' },
   { name: 'Sealed Product', percent: 25, description: 'Booster boxes, ETBs, tins', query: 'pokemon booster box sealed', shopUrl: '/buy/category/booster-boxes' },
-  { name: 'Supplies', percent: 10, description: 'Sleeves, binders, top loaders', query: 'pokemon card sleeves binder top loader', shopUrl: '/buy/category/accessories' },
+  { name: 'Supplies', percent: 10, description: 'Sleeves, top loaders, PSA cases', query: 'pokemon card sleeves top loaders PSA case', shopUrl: '/buy/category/accessories' },
   { name: 'Food & Drinks', percent: 10, description: 'Meals and snacks at the event', query: '', shopUrl: '' },
   { name: 'Grading', percent: 5, description: 'PSA/CGC/BGS submission fees', query: 'PSA grading submission pokemon', shopUrl: '/buy/category/graded-cards' },
 ];

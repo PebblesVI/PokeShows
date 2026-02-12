@@ -256,6 +256,7 @@ export default function GradingPage() {
             { label: 'Semi-Rigid Card Holders', query: 'semi rigid card holders grading', customId: 'grading-semirigid' },
             { label: 'Card Saver I (fits PSA/CGC)', query: 'card saver 1 grading submission', customId: 'grading-cardsaver' },
             { label: 'Top Loaders', query: 'top loaders 25 pack cards', customId: 'grading-toploaders' },
+            { label: 'PSA Slab Storage Case', query: 'PSA graded card storage case', customId: 'grading-psacase' },
             { label: 'Microfiber Cleaning Cloth', query: 'microfiber cloth electronics lens', customId: 'grading-cloth' },
             { label: 'Magnifying Loupe (10x)', query: 'jewelers loupe 10x magnifying', customId: 'grading-loupe' },
           ].map(({ label, query, customId }) => (

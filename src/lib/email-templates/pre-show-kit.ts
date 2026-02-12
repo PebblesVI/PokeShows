@@ -22,9 +22,9 @@ const TRENDING_CARDS = [
 
 const SUPPLY_CHECKLIST = [
   { label: 'Penny Sleeves (100ct)', query: 'penny sleeves 100 card', customId: 'preshow-sleeves' },
-  { label: 'Top Loaders (25ct)', query: 'top loaders 25 pack cards', customId: 'preshow-toploaders' },
-  { label: 'Card Binder 9-Pocket', query: 'pokemon card binder 9 pocket', customId: 'preshow-binder' },
-  { label: 'Magnetic Card Holders', query: 'magnetic card holder 35pt', customId: 'preshow-magnetic' },
+  { label: 'Top Loaders (25ct)', query: 'ultra pro top loaders 25 pack', customId: 'preshow-toploaders' },
+  { label: 'PSA Slab Storage Case', query: 'PSA graded card storage case', customId: 'preshow-psacase' },
+  { label: 'Magnetic One-Touch Holders', query: 'magnetic card holder 35pt one touch', customId: 'preshow-magnetic' },
   { label: 'Team Bags', query: 'team bags resealable cards', customId: 'preshow-teambags' },
 ];
 

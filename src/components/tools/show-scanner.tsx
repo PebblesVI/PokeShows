@@ -268,8 +268,8 @@ export function ShowScanner() {
             <div className="flex flex-wrap gap-1.5">
               {[
                 { label: 'Sleeves', query: 'pokemon card penny sleeves', customId: 'haul-sleeves' },
-                { label: 'Top Loaders', query: 'card top loaders', customId: 'haul-toploaders' },
-                { label: 'Binder', query: 'pokemon card binder', customId: 'haul-binder' },
+                { label: 'Top Loaders', query: 'ultra pro top loaders 35pt', customId: 'haul-toploaders' },
+                { label: 'PSA Cases', query: 'PSA graded card storage case', customId: 'haul-psacase' },
               ].map(({ label, query, customId }) => (
                 <a
                   key={label}

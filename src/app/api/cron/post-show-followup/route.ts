@@ -69,8 +69,8 @@ function buildFollowupEmailHtml(showName: string, showSlug: string, city: string
               </tr>
               <tr>
                 <td>
-                  <a href="${buildEbaySearchUrl({ searchQuery: 'pokemon card binder storage', customId: 'followup-storage' })}" style="display: block; background-color: ${YELLOW}; color: ${DARK_BG}; font-weight: 700; font-size: 14px; text-decoration: none; padding: 12px 20px; border-radius: 8px; text-align: center;">
-                    Card Storage &amp; Binders
+                  <a href="${buildEbaySearchUrl({ searchQuery: 'PSA graded card storage case', customId: 'followup-storage' })}" style="display: block; background-color: ${YELLOW}; color: ${DARK_BG}; font-weight: 700; font-size: 14px; text-decoration: none; padding: 12px 20px; border-radius: 8px; text-align: center;">
+                    PSA Slab Cases
                   </a>
                 </td>
               </tr>

@@ -224,12 +224,12 @@ export function CompareContent() {
                     <ExternalLink className="h-3 w-3 text-muted-foreground" />
                   </a>
                   <a
-                    href={buildEbaySearchUrl({ searchQuery: 'pokemon card sleeves binder', customId: showCustomId })}
+                    href={buildEbaySearchUrl({ searchQuery: 'pokemon card sleeves top loaders', customId: showCustomId })}
                     target="_blank"
                     rel="noopener noreferrer nofollow"
                     className="flex items-center justify-between text-xs px-3 py-2 rounded-lg border border-border hover:border-primary/30 transition-colors"
                   >
-                    <span>Card Sleeves & Binders</span>
+                    <span>Card Sleeves & Top Loaders</span>
                     <ExternalLink className="h-3 w-3 text-muted-foreground" />
                   </a>
                   <a

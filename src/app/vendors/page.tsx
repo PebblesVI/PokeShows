@@ -166,7 +166,7 @@ export default async function VendorsPage() {
             <h2 className="text-xl font-semibold">Get Featured</h2>
           </div>
           <p className="text-sm text-muted-foreground mb-4">
-            Stand out from the crowd with a Featured Vendor listing. Get a yellow border, top placement, and inclusion in pre-show emails sent to collectors.
+            Help collectors find you before their next show! Featured vendors get top placement and are included in prep emails sent to attendees.
           </p>
           <div className="grid gap-3 sm:grid-cols-3 mb-5">
             {[

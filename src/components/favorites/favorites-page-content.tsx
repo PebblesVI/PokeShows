@@ -64,10 +64,10 @@ export function FavoritesPageContent() {
         <p className="text-sm text-muted-foreground mb-4">Get everything you need before your next card show.</p>
         <div className="flex flex-wrap gap-2">
           {[
-            { label: 'Card Sleeves', query: 'pokemon card sleeves' },
-            { label: 'Binders', query: 'pokemon card binder' },
-            { label: 'Top Loaders', query: 'card top loaders' },
-            { label: 'Booster Boxes', query: 'pokemon booster box sealed' },
+            { label: 'Card Sleeves', query: 'pokemon card penny sleeves' },
+            { label: 'Top Loaders', query: 'ultra pro top loaders 35pt' },
+            { label: 'PSA Slab Cases', query: 'PSA graded card storage case' },
+            { label: 'Magnetic Holders', query: 'magnetic card holder 35pt one touch' },
           ].map(({ label, query }) => (
             <a
               key={label}

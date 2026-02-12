@@ -144,9 +144,9 @@ export function SharedWishlistContent({ cardIds }: { cardIds: string }) {
         </div>
         <div className="flex flex-wrap gap-2">
           {[
-            { label: 'Card Sleeves', query: 'pokemon card sleeves' },
-            { label: 'Top Loaders', query: 'card top loaders' },
-            { label: 'Card Binder', query: 'pokemon card binder' },
+            { label: 'Card Sleeves', query: 'pokemon card penny sleeves' },
+            { label: 'Top Loaders', query: 'ultra pro top loaders 35pt' },
+            { label: 'PSA Slab Cases', query: 'PSA graded card storage case' },
           ].map(({ label, query }) => (
             <a
               key={label}

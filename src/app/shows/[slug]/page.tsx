@@ -182,8 +182,8 @@ export default async function ShowDetailPage({
                 customId={`show-${show.slug}`}
               />
               <AffiliateLink
-                label="Card Sleeves & Binders"
-                searchQuery="pokemon card sleeves binder"
+                label="Card Sleeves & Top Loaders"
+                searchQuery="pokemon card sleeves top loaders"
                 customId={`show-${show.slug}`}
               />
               <AffiliateLink

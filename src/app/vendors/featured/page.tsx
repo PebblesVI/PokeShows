@@ -4,8 +4,8 @@ import { Star, Check, Users, Mail, MapPin, TrendingUp } from 'lucide-react';
 import { SponsorContactForm } from '@/components/sponsors/sponsor-contact-form';
 
 export const metadata: Metadata = {
-  title: 'Get Featured — Vendor Advertising on PokeShows',
-  description: 'Boost your Pokemon card business with a Featured Vendor listing on PokeShows. Top placement, show page presence, and pre-show email inclusion.',
+  title: 'Get Featured — Stand Out on PokeShows',
+  description: 'Get a Featured Vendor listing on PokeShows. Stand out to collectors with top placement, show page presence, and pre-show email inclusion.',
 };
 
 const BENEFITS = [
@@ -31,8 +31,8 @@ const BENEFITS = [
   },
   {
     icon: <Users className="h-5 w-5 text-orange-500" />,
-    title: 'Reach Active Collectors',
-    desc: 'PokeShows users are actively attending shows and buying cards. High-intent audience.',
+    title: 'Connect with Collectors',
+    desc: 'PokeShows users are actively attending shows and looking for great vendors to buy from.',
   },
 ];
 
@@ -62,7 +62,7 @@ export default function FeaturedVendorsPage() {
           <h1 className="text-3xl font-bold">Get Featured on PokeShows</h1>
         </div>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          Boost your vendor listing to reach thousands of active Pokemon card collectors heading to shows in your area.
+          Help collectors find you! A featured listing puts your shop front and center for show-goers in your area.
         </p>
       </div>
 
