@@ -54,14 +54,14 @@ export const SHOP_CATEGORIES = [
     slug: 'accessories',
     name: 'Card Supplies & Accessories',
     description: 'Sleeves, binders, top loaders, and card storage.',
-    searchQuery: 'pokemon card sleeves binder top loader',
+    searchQuery: 'pokemon card supplies sleeves binder',
     ebayCategory: '183461',
   },
   {
     slug: 'tins-packs',
     name: 'Tins & Blister Packs',
     description: 'Pokemon tins, blister packs, and collection boxes.',
-    searchQuery: 'pokemon tin blister pack sealed',
+    searchQuery: 'pokemon tin sealed collection',
     ebayCategory: '183454',
   },
   {

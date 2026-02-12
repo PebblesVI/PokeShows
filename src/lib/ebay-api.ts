@@ -132,7 +132,7 @@ export async function searchEbayListings(options: EbaySearchOptions): Promise<Eb
       title: item.title,
       price: item.price ? parseFloat(item.price.value) : null,
       currency: item.price?.currency || 'USD',
-      imageUrl: item.image?.imageUrl || null,
+      imageUrl: item.image?.imageUrl?.replace('s-l225.jpg', 's-l500.jpg') || null,
       itemUrl: item.itemWebUrl,
       condition: item.condition || null,
       seller: item.seller?.username || null,
