@@ -52,7 +52,18 @@ export function GoingButton({ showSlug, size = 'icon' }: { showSlug: string; siz
     e.preventDefault();
     e.stopPropagation();
 
-    const email = localStorage.getItem('pokeshows-email') || '';
+    let email = localStorage.getItem('pokeshows-email') || '';
+
+    // Prompt for email if not already stored (for pre-show kit emails)
+    if (!isGoing && !email) {
+      const prompted = window.prompt(
+        'Enter your email to get a free Show Day Prep Kit with price guides and supply checklists 2 days before the show (optional):'
+      );
+      if (prompted && prompted.includes('@')) {
+        email = prompted.trim();
+        localStorage.setItem('pokeshows-email', email);
+      }
+    }
 
     try {
       const res = await fetch('/api/shows/going', {

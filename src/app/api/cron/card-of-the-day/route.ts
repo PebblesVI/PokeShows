@@ -4,6 +4,8 @@ import { cardOfTheDay, cardPriceHistory } from '@/db/schema';
 import { desc, eq } from 'drizzle-orm';
 import { getRandomCard, getCardById } from '@/lib/pokemon-tcg';
 import { format } from 'date-fns';
+// Sponsored COTD: admins pre-insert rows with isSponsored=true and a future featuredDate.
+// The cron skips dates that already have a card, so sponsored cards are preserved automatically.
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +22,7 @@ export async function GET(request: NextRequest) {
   });
 
   if (existing) {
+    // If today's card was pre-inserted (e.g. a sponsored card), don't override it
     return NextResponse.json({ message: 'Card already selected for today', card: existing.cardName });
   }
 

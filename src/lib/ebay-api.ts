@@ -92,8 +92,11 @@ export async function searchEbayListings(options: EbaySearchOptions): Promise<Eb
   const params = new URLSearchParams({
     q: options.query,
     limit: String(options.limit || 20),
-    category_ids: options.categoryId || '183454', // Trading cards default
   });
+
+  if (options.categoryId) {
+    params.set('category_ids', options.categoryId);
+  }
 
   if (options.sort) {
     params.set('sort', options.sort);

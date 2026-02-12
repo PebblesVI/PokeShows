@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { priceAlerts, cardPriceHistory } from '@/db/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { priceAlerts, cardPriceHistory, wishlistAlerts, cardOfTheDay } from '@/db/schema';
+import { eq, and, desc, sql } from 'drizzle-orm';
+import { buildWishlistPriceDropEmailHtml, buildWishlistPriceDropEmailSubject } from '@/lib/email-templates/wishlist-price-drop';
+import { format, subDays } from 'date-fns';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -114,7 +116,99 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ success: true, total: pendingAlerts.length, sent, skipped });
+    // Wishlist Price Drop Alerts
+    let wishlistAlertsSent = 0;
+    try {
+      const allWishlistAlerts = await db.select().from(wishlistAlerts);
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
+
+      for (const alert of allWishlistAlerts) {
+        // Don't check more than once per day
+        if (alert.lastCheckedAt === today) continue;
+
+        try {
+          const cardIds: string[] = JSON.parse(alert.cardIds);
+          const droppedCards: { name: string; previousPrice: number; currentPrice: number; dropPercent: number; tcgPlayerUrl?: string | null }[] = [];
+
+          for (const cardId of cardIds) {
+            // Get today's price
+            const [todayPrice] = await db.select()
+              .from(cardPriceHistory)
+              .where(eq(cardPriceHistory.pokemonTcgId, cardId))
+              .orderBy(desc(cardPriceHistory.recordedDate))
+              .limit(1);
+
+            if (!todayPrice?.priceMarket && !todayPrice?.priceMid) continue;
+            const currentPrice = todayPrice.priceMarket ?? todayPrice.priceMid ?? 0;
+
+            // Get previous price (yesterday or older)
+            const [prevPrice] = await db.select()
+              .from(cardPriceHistory)
+              .where(and(
+                eq(cardPriceHistory.pokemonTcgId, cardId),
+                sql`${cardPriceHistory.recordedDate} < ${todayPrice.recordedDate}`,
+              ))
+              .orderBy(desc(cardPriceHistory.recordedDate))
+              .limit(1);
+
+            if (!prevPrice?.priceMarket && !prevPrice?.priceMid) continue;
+            const previousPrice = prevPrice.priceMarket ?? prevPrice.priceMid ?? 0;
+
+            if (previousPrice <= 0 || currentPrice >= previousPrice) continue;
+
+            const dropPercent = ((previousPrice - currentPrice) / previousPrice) * 100;
+
+            if (dropPercent >= alert.thresholdPercent) {
+              // Get card name from cardOfTheDay table
+              const cotdCard = await db.query.cardOfTheDay.findFirst({
+                where: eq(cardOfTheDay.pokemonTcgId, cardId),
+              });
+
+              droppedCards.push({
+                name: cotdCard?.cardName ?? cardId,
+                previousPrice,
+                currentPrice,
+                dropPercent,
+                tcgPlayerUrl: cotdCard?.tcgPlayerUrl,
+              });
+            }
+          }
+
+          if (droppedCards.length > 0) {
+            const html = buildWishlistPriceDropEmailHtml(droppedCards);
+            const subject = buildWishlistPriceDropEmailSubject(droppedCards);
+
+            const emailRes = await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${resendApiKey}`,
+              },
+              body: JSON.stringify({
+                from: 'PokeShows <reminders@pokeshows.com>',
+                to: [alert.email],
+                subject,
+                html,
+              }),
+            });
+
+            if (emailRes.ok) wishlistAlertsSent++;
+          }
+
+          // Mark as checked today
+          await db.update(wishlistAlerts)
+            .set({ lastCheckedAt: today })
+            .where(eq(wishlistAlerts.id, alert.id));
+        } catch (err) {
+          console.error(`[check-prices] Wishlist alert error for ${alert.email}:`, err);
+        }
+      }
+    } catch (err) {
+      console.error('[check-prices] Wishlist alerts batch error:', err);
+    }
+
+    return NextResponse.json({ success: true, total: pendingAlerts.length, sent, skipped, wishlistAlertsSent });
   } catch (error) {
     console.error('[check-prices] Cron failed:', error);
     return NextResponse.json({ error: 'Failed' }, { status: 500 });

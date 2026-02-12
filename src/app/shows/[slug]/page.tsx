@@ -16,6 +16,11 @@ import { GoingButton } from '@/components/shows/going-button';
 import { ReviewForm } from '@/components/shows/review-form';
 import { ReviewList } from '@/components/shows/review-list';
 import { FollowOrganizerButton } from '@/components/shows/follow-organizer-button';
+import { db } from '@/db';
+import { vendorShowPresence, vendors } from '@/db/schema';
+import { eq } from 'drizzle-orm';
+import { Badge } from '@/components/ui/badge';
+import { MapPin, Star, Store } from 'lucide-react';
 
 export async function generateMetadata({
   params,
@@ -61,6 +66,20 @@ export default async function ShowDetailPage({
   if (!show) notFound();
 
   const relatedShows = await getRelatedShows(show.state, show.id, 4);
+
+  // Fetch vendors attending this show
+  const vendorPresences = await db.select()
+    .from(vendorShowPresence)
+    .where(eq(vendorShowPresence.showSlug, show.slug));
+
+  let showVendors: (typeof vendors.$inferSelect)[] = [];
+  if (vendorPresences.length > 0) {
+    const vendorIds = vendorPresences.map(vp => vp.vendorId);
+    const allVendors = await db.select().from(vendors);
+    showVendors = allVendors.filter(v => vendorIds.includes(v.id));
+    // Sort: featured first
+    showVendors.sort((a, b) => (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0));
+  }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pokeshows.com';
   const dateStr = format(new Date(show.startDate), 'MMMM d, yyyy');
@@ -114,6 +133,45 @@ export default async function ShowDetailPage({
 
           <aside className="space-y-8">
             <ReminderForm showSlug={show.slug} showName={show.name} showDate={show.startDate} />
+
+            {/* Vendors at This Show */}
+            {showVendors.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Store className="h-5 w-5" />
+                  Vendors at This Show
+                </h3>
+                <div className="space-y-3">
+                  {showVendors.map(vendor => (
+                    <Link key={vendor.id} href={`/vendors/${vendor.slug}`}>
+                      <div className={`rounded-lg border p-3 transition-all hover:shadow-sm ${vendor.isFeatured ? 'border-yellow-400/60 bg-yellow-50/50 dark:bg-yellow-900/10' : 'border-border hover:border-primary/30'}`}>
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="font-medium text-sm">{vendor.name}</span>
+                          {vendor.isFeatured && (
+                            <Badge className="bg-yellow-400 text-yellow-900 text-[10px] shrink-0">
+                              <Star className="h-2.5 w-2.5 mr-0.5" />
+                              Featured
+                            </Badge>
+                          )}
+                        </div>
+                        {vendor.city && (
+                          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                            <MapPin className="h-3 w-3" />
+                            {vendor.city}, {vendor.state}
+                          </p>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+                <Link
+                  href="/vendors"
+                  className="block text-center text-sm text-muted-foreground hover:text-primary hover:underline mt-3"
+                >
+                  View all vendors &rarr;
+                </Link>
+              </div>
+            )}
 
             <div>
             <h3 className="text-lg font-semibold mb-4">Shop for the Show</h3>

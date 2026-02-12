@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, ShoppingBag } from 'lucide-react';
+import { ExternalLink, ShoppingBag, Megaphone } from 'lucide-react';
 import { buildEbaySearchUrl } from '@/lib/ebay';
 import { buildTcgPlayerAffiliateUrl } from '@/lib/tcgplayer-affiliate';
 import { cardToSlug } from '@/lib/card-slug';
@@ -41,8 +41,28 @@ export function CardHero({ card }: { card: CardOfTheDay }) {
       </div>
 
       <div className="flex-1">
-        <p className="text-sm text-primary font-medium mb-1 tracking-wide uppercase">Card of the Day</p>
-        <h2 className="text-3xl font-bold mb-6 tracking-tight">{card.cardName}</h2>
+        <div className="flex items-center gap-2 mb-1">
+          <p className="text-sm text-primary font-medium tracking-wide uppercase">Card of the Day</p>
+          {card.isSponsored && (
+            <Badge variant="outline" className="text-xs border-yellow-400 text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 dark:text-yellow-400">
+              <Megaphone className="h-3 w-3 mr-1" />
+              Sponsored
+            </Badge>
+          )}
+        </div>
+        <h2 className="text-3xl font-bold mb-2 tracking-tight">{card.cardName}</h2>
+        {card.isSponsored && card.sponsorName && (
+          <p className="text-sm text-muted-foreground mb-4">
+            Presented by{' '}
+            {card.sponsorUrl ? (
+              <a href={card.sponsorUrl} target="_blank" rel="noopener noreferrer nofollow" className="text-primary hover:underline font-medium">
+                {card.sponsorName}
+              </a>
+            ) : (
+              <span className="font-medium">{card.sponsorName}</span>
+            )}
+          </p>
+        )}
 
         <div className="space-y-2 mb-6 text-sm">
           <p><span className="text-muted-foreground">Set:</span> {card.setName}{card.setSeries ? ` (${card.setSeries})` : ''}</p>

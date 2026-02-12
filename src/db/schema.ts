@@ -61,6 +61,9 @@ export const cardOfTheDay = sqliteTable('card_of_the_day', {
   priceHigh: real('price_high'),
   priceDirectLow: real('price_direct_low'),
   priceVariant: text('price_variant'),
+  isSponsored: integer('is_sponsored', { mode: 'boolean' }).default(false),
+  sponsorName: text('sponsor_name'),
+  sponsorUrl: text('sponsor_url'),
   createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 }, (table) => [
   uniqueIndex('cotd_featured_date_idx').on(table.featuredDate),
@@ -220,8 +223,54 @@ export const vendors = sqliteTable('vendors', {
   specialties: text('specialties'), // JSON array: ["vintage", "graded", "japanese"]
   isVerified: integer('is_verified', { mode: 'boolean' }).default(false),
   isFeatured: integer('is_featured', { mode: 'boolean' }).default(false),
+  featuredUntil: text('featured_until'), // ISO date — null means not time-limited
+  showSlugs: text('show_slugs'), // JSON array of show slugs this vendor attends
   createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 }, (table) => [
   index('vendors_state_idx').on(table.state),
   index('vendors_featured_idx').on(table.isFeatured),
 ]);
+
+export const vendorShowPresence = sqliteTable('vendor_show_presence', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  vendorId: integer('vendor_id').notNull(),
+  showSlug: text('show_slug').notNull(),
+  isSponsored: integer('is_sponsored', { mode: 'boolean' }).default(false),
+  createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+}, (table) => [
+  uniqueIndex('vsp_vendor_show_idx').on(table.vendorId, table.showSlug),
+  index('vsp_show_slug_idx').on(table.showSlug),
+]);
+
+export const gradingLeads = sqliteTable('grading_leads', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  email: text('email').notNull(),
+  name: text('name').notNull(),
+  cardCount: integer('card_count').notNull(),
+  estimatedValue: text('estimated_value').notNull(),
+  preferredService: text('preferred_service'), // PSA, CGC, BGS, ACE, or null (no preference)
+  turnaroundPreference: text('turnaround_preference'), // economy, standard, express
+  createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+});
+
+export const wishlistAlerts = sqliteTable('wishlist_alerts', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  email: text('email').notNull(),
+  cardIds: text('card_ids').notNull(), // JSON array of pokemonTcgIds
+  alertType: text('alert_type').default('price_drop').notNull(), // price_drop
+  thresholdPercent: integer('threshold_percent').default(10).notNull(), // e.g. 10 = notify on 10%+ drop
+  lastCheckedAt: text('last_checked_at'),
+  createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+}, (table) => [
+  uniqueIndex('wishlist_alerts_email_idx').on(table.email),
+]);
+
+export const sponsorRequests = sqliteTable('sponsor_requests', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  email: text('email').notNull(),
+  businessName: text('business_name'),
+  sponsorType: text('sponsor_type').notNull(), // cotd, vendor, general
+  message: text('message'),
+  createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+});

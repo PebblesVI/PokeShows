@@ -55,7 +55,44 @@ export async function GET(request: Request) {
       await new Promise(r => setTimeout(r, 500));
     }
 
-    // 3. Refresh recent Card of the Day listings
+    // 3. Refresh trending/popular card searches
+    const POPULAR_SEARCHES = [
+      'charizard pokemon card',
+      'pikachu vmax pokemon card',
+      'mewtwo pokemon card',
+      'lugia pokemon card',
+      'umbreon pokemon card',
+      'rayquaza pokemon card',
+    ];
+
+    for (const query of POPULAR_SEARCHES) {
+      try {
+        const listings = await searchEbayListings({
+          query,
+          limit: 10,
+          sort: 'newlyListed',
+        });
+
+        if (listings.length > 0) {
+          await upsertListings(listings, {
+            searchQuery: query,
+            cardSlug: query.replace(/\s+/g, '-').toLowerCase(),
+          });
+        }
+
+        results.push({ query, count: listings.length });
+      } catch (error) {
+        results.push({
+          query,
+          count: 0,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+
+      await new Promise(r => setTimeout(r, 500));
+    }
+
+    // 4. Refresh recent Card of the Day listings
     const recentCards = await getPopularCardSearches(6);
 
     for (const card of recentCards) {

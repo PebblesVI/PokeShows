@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { ExternalLink, ArrowLeft } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ListingGrid } from '@/components/buy/listing-grid';
-import { getListingsByCardSlug } from '@/db/queries/listings';
+import { getFreshCardListings } from '@/lib/listing-refresh';
 import { slugToSearchQuery, cardToSlug } from '@/lib/card-slug';
 import { buildEbaySearchUrl } from '@/lib/ebay';
 import { buildTcgPlayerAffiliateUrl } from '@/lib/tcgplayer-affiliate';
@@ -72,10 +72,10 @@ export default async function CardBuyPage({
 }) {
   const { slug } = await params;
   const card = await findCardBySlug(slug);
-  const listings = await getListingsByCardSlug(slug);
+  const searchQuery = `pokemon card ${card ? `${card.cardName} ${card.setName}` : slugToSearchQuery(slug)}`;
+  const listings = await getFreshCardListings(slug, searchQuery);
   const relatedCards = card ? await getRelatedCards(card.id) : [];
   const displayName = card?.cardName ?? slugToSearchQuery(slug).replace(/\b\w/g, c => c.toUpperCase());
-  const searchQuery = `pokemon card ${card ? `${card.cardName} ${card.setName}` : slugToSearchQuery(slug)}`;
   const ebaySearchUrl = buildEbaySearchUrl({ searchQuery, customId: `buy-card-${slug}` });
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pokeshows.com';
 

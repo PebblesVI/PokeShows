@@ -158,6 +158,40 @@ export default async function VendorsPage() {
         </div>
       ) : null}
 
+      {/* Get Featured CTA */}
+      <section className="mb-12">
+        <div className="rounded-xl border-2 border-yellow-400/60 bg-yellow-50/30 dark:bg-yellow-900/10 p-6">
+          <div className="flex items-center gap-2 mb-2">
+            <Star className="h-5 w-5 text-yellow-500" />
+            <h2 className="text-xl font-semibold">Get Featured</h2>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            Stand out from the crowd with a Featured Vendor listing. Get a yellow border, top placement, and inclusion in pre-show emails sent to collectors.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-3 mb-5">
+            {[
+              { label: 'Top Placement', desc: 'Appear above all other vendors' },
+              { label: 'Pre-Show Emails', desc: 'Featured in show prep kit emails' },
+              { label: 'Show Pages', desc: 'Listed on individual show pages' },
+            ].map(item => (
+              <div key={item.label} className="rounded-lg border border-yellow-300/50 bg-white/50 dark:bg-background p-3 text-center">
+                <p className="font-medium text-sm">{item.label}</p>
+                <p className="text-xs text-muted-foreground mt-1">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-4">
+            <Link
+              href="/vendors/featured"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-yellow-400 text-yellow-900 font-semibold rounded-full hover:bg-yellow-500 transition-colors text-sm"
+            >
+              Get Featured — $10/month
+            </Link>
+            <span className="text-xs text-muted-foreground">or $5/show • No contracts</span>
+          </div>
+        </div>
+      </section>
+
       {/* Register CTA */}
       <section>
         <div className="rounded-xl border border-border p-6">

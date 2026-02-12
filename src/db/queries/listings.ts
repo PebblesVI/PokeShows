@@ -79,6 +79,31 @@ export async function getPopularCardSearches(limit = 12) {
     .limit(limit);
 }
 
+/**
+ * Returns the age of the newest listing in a category (in ms), or null if none exist.
+ */
+export async function getCategoryFreshness(categorySlug: string): Promise<number | null> {
+  const [latest] = await db.select({ fetchedAt: ebayListings.fetchedAt })
+    .from(ebayListings)
+    .where(eq(ebayListings.categorySlug, categorySlug))
+    .orderBy(desc(ebayListings.fetchedAt))
+    .limit(1);
+
+  if (!latest?.fetchedAt) return null;
+  return Date.now() - new Date(latest.fetchedAt).getTime();
+}
+
+export async function getCardSlugFreshness(cardSlug: string): Promise<number | null> {
+  const [latest] = await db.select({ fetchedAt: ebayListings.fetchedAt })
+    .from(ebayListings)
+    .where(eq(ebayListings.cardSlug, cardSlug))
+    .orderBy(desc(ebayListings.fetchedAt))
+    .limit(1);
+
+  if (!latest?.fetchedAt) return null;
+  return Date.now() - new Date(latest.fetchedAt).getTime();
+}
+
 export async function getListingCount() {
   const result = await db.select({ count: sql<number>`count(*)` })
     .from(ebayListings);

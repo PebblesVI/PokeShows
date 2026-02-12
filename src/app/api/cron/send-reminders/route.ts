@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { showReminders, shows } from '@/db/schema';
+import { showReminders, shows, showCheckins } from '@/db/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { differenceInDays, parse, format, subDays } from 'date-fns';
 import { buildReminderEmailHtml, buildReminderEmailSubject } from '@/lib/email-templates/show-reminder';
+import { buildPreShowKitEmailHtml, buildPreShowKitEmailSubject } from '@/lib/email-templates/pre-show-kit';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -191,12 +192,60 @@ export async function GET(request: NextRequest) {
       console.error('[send-reminders] Lapsed re-engagement error:', err);
     }
 
+    // Pre-Show Shopping Kit: send to users who marked "Going" 2 days before the show
+    let preShowKitsSent = 0;
+    try {
+      const twoDaysFromNow = format(new Date(now.getTime() + 2 * 86400000), 'yyyy-MM-dd');
+
+      // Find shows happening in 2 days
+      const upcomingShows = await db.select()
+        .from(shows)
+        .where(eq(shows.startDate, twoDaysFromNow));
+
+      for (const show of upcomingShows) {
+        // Find all users who checked in (going) with a real email
+        const checkins = await db.select()
+          .from(showCheckins)
+          .where(and(
+            eq(showCheckins.showSlug, show.slug),
+            sql`${showCheckins.email} != 'anonymous' AND ${showCheckins.email} LIKE '%@%'`,
+          ));
+
+        for (const checkin of checkins) {
+          try {
+            const html = buildPreShowKitEmailHtml(show);
+            const subject = buildPreShowKitEmailSubject(show);
+
+            await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${resendApiKey}`,
+              },
+              body: JSON.stringify({
+                from: 'PokeShows <reminders@pokeshows.com>',
+                to: [checkin.email],
+                subject,
+                html,
+              }),
+            });
+            preShowKitsSent++;
+          } catch (err) {
+            console.error(`[send-reminders] Pre-show kit error for ${checkin.email}:`, err);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[send-reminders] Pre-show kit batch error:', err);
+    }
+
     return NextResponse.json({
       success: true,
       total: pendingReminders.length,
       sent,
       skipped,
       lapsedSent,
+      preShowKitsSent,
     });
   } catch (error) {
     console.error('[send-reminders] Cron failed:', error);

@@ -4,14 +4,17 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Trash2, Share2, Check, ShoppingBag } from 'lucide-react';
+import { ExternalLink, Trash2, Share2, Check, ShoppingBag, Bell } from 'lucide-react';
 import { useWishlist } from './wishlist-provider';
 import { buildEbaySearchUrl } from '@/lib/ebay';
 import { cardToSlug } from '@/lib/card-slug';
+import { Button } from '@/components/ui/button';
 
 export function WishlistPageContent() {
   const { wishlist, removeCard } = useWishlist();
   const [copied, setCopied] = useState(false);
+  const [alertEmail, setAlertEmail] = useState('');
+  const [alertStatus, setAlertStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
   const handleShare = async () => {
     const ids = wishlist.map(c => c.cardId).join(',');
@@ -69,6 +72,63 @@ export function WishlistPageContent() {
         <span className="text-sm text-muted-foreground">
           {wishlist.length} {wishlist.length === 1 ? 'card' : 'cards'}
         </span>
+      </div>
+
+      {/* Price Drop Alert CTA */}
+      <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 mb-8">
+        <div className="flex items-center gap-2 mb-2">
+          <Bell className="h-4 w-4 text-primary" />
+          <h3 className="font-semibold text-sm">Get Price Drop Alerts</h3>
+        </div>
+        {alertStatus === 'success' ? (
+          <p className="text-sm text-green-600 dark:text-green-400">
+            You&apos;re subscribed! We&apos;ll email you when any card on your wishlist drops 10%+ in price.
+          </p>
+        ) : (
+          <>
+            <p className="text-xs text-muted-foreground mb-3">
+              Get notified when any card on your wishlist drops in price. Alerts include direct buy links.
+            </p>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!alertEmail.includes('@')) return;
+                setAlertStatus('loading');
+                try {
+                  const res = await fetch('/api/wishlist-alerts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      email: alertEmail,
+                      cardIds: wishlist.map(c => c.cardId),
+                      thresholdPercent: 10,
+                    }),
+                  });
+                  setAlertStatus(res.ok ? 'success' : 'error');
+                } catch {
+                  setAlertStatus('error');
+                }
+              }}
+              className="flex gap-2"
+            >
+              <input
+                type="email"
+                value={alertEmail}
+                onChange={(e) => setAlertEmail(e.target.value)}
+                placeholder="your@email.com"
+                required
+                className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+              <Button type="submit" size="sm" disabled={alertStatus === 'loading'} className="gap-1.5">
+                <Bell className="h-3.5 w-3.5" />
+                {alertStatus === 'loading' ? 'Saving...' : 'Alert Me'}
+              </Button>
+            </form>
+            {alertStatus === 'error' && (
+              <p className="text-xs text-red-500 mt-2">Something went wrong. Please try again.</p>
+            )}
+          </>
+        )}
       </div>
 
       {/* Card grid */}

@@ -1,7 +1,8 @@
 import { Metadata } from 'next';
 import { Badge } from '@/components/ui/badge';
 import { buildEbaySearchUrl } from '@/lib/ebay';
-import { ExternalLink, Shield, Lightbulb } from 'lucide-react';
+import { ExternalLink, Shield, Lightbulb, Package, FileText } from 'lucide-react';
+import { GradingQuoteForm } from '@/components/tools/grading-quote-form';
 
 export const metadata: Metadata = {
   title: 'Pokemon Card Grading Guide — Compare PSA, CGC, BGS, ACE',
@@ -211,7 +212,7 @@ export default function GradingPage() {
       </section>
 
       {/* Grading Tips */}
-      <section>
+      <section className="mb-12">
         <div className="flex items-center gap-2 mb-4">
           <Lightbulb className="h-5 w-5 text-yellow-500" />
           <h2 className="text-xl font-semibold">Grading Tips</h2>
@@ -222,6 +223,52 @@ export default function GradingPage() {
               <h3 className="font-medium mb-1 text-sm">{item.title}</h3>
               <p className="text-sm text-muted-foreground">{item.tip}</p>
             </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Get a Quote */}
+      <section className="mb-12">
+        <div className="rounded-xl border-2 border-primary/20 bg-primary/5 p-6">
+          <div className="flex items-center gap-2 mb-2">
+            <FileText className="h-5 w-5 text-primary" />
+            <h2 className="text-xl font-semibold">Get a Grading Quote</h2>
+          </div>
+          <p className="text-sm text-muted-foreground mb-6">
+            Not sure which service to use? Tell us about your cards and we&apos;ll connect you with the right grading company for your needs and budget.
+          </p>
+          <GradingQuoteForm />
+        </div>
+      </section>
+
+      {/* Grading Prep Kit */}
+      <section>
+        <div className="flex items-center gap-2 mb-4">
+          <Package className="h-5 w-5 text-primary" />
+          <h2 className="text-xl font-semibold">Grading Prep Kit</h2>
+        </div>
+        <p className="text-sm text-muted-foreground mb-4">
+          Everything you need to prepare and ship your cards for grading:
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {[
+            { label: 'Penny Sleeves (100ct)', query: 'penny sleeves 100 count cards', customId: 'grading-sleeves' },
+            { label: 'Semi-Rigid Card Holders', query: 'semi rigid card holders grading', customId: 'grading-semirigid' },
+            { label: 'Card Saver I (fits PSA/CGC)', query: 'card saver 1 grading submission', customId: 'grading-cardsaver' },
+            { label: 'Top Loaders', query: 'top loaders 25 pack cards', customId: 'grading-toploaders' },
+            { label: 'Microfiber Cleaning Cloth', query: 'microfiber cloth electronics lens', customId: 'grading-cloth' },
+            { label: 'Magnifying Loupe (10x)', query: 'jewelers loupe 10x magnifying', customId: 'grading-loupe' },
+          ].map(({ label, query, customId }) => (
+            <a
+              key={label}
+              href={buildEbaySearchUrl({ searchQuery: query, customId })}
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              className="flex items-center justify-between rounded-lg border border-border p-3 hover:border-primary/30 hover:bg-primary/5 transition-all"
+            >
+              <span className="text-sm font-medium">{label}</span>
+              <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            </a>
           ))}
         </div>
       </section>

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { ListingGrid } from '@/components/buy/listing-grid';
-import { getListingsByCategory } from '@/db/queries/listings';
+import { getFreshCategoryListings } from '@/lib/listing-refresh';
 import { SHOP_CATEGORIES } from '@/lib/constants';
 import { buildEbaySearchUrl } from '@/lib/ebay';
 
@@ -41,7 +41,7 @@ export default async function CategoryBuyPage({
   const category = getCategoryBySlug(slug);
   if (!category) notFound();
 
-  const listings = await getListingsByCategory(slug);
+  const listings = await getFreshCategoryListings(slug);
   const ebaySearchUrl = buildEbaySearchUrl({
     searchQuery: category.searchQuery,
     category: category.ebayCategory,
