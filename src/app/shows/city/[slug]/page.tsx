@@ -3,8 +3,10 @@ export const dynamic = 'force-dynamic';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { ExternalLink } from 'lucide-react';
 import { US_STATE_NAMES } from '@/lib/constants';
 import { getShowsByCity } from '@/db/queries/shows';
+import { buildEbaySearchUrl } from '@/lib/ebay';
 import { ShowList } from '@/components/shows/show-list';
 import { JsonLdItemList } from '@/components/seo/json-ld-item-list';
 
@@ -102,6 +104,84 @@ export default async function CityShowsPage({
               <li>Add cards to your <Link href="/wishlist" className="text-primary hover:underline">Wishlist</Link> so you know what to look for.</li>
               <li>Save shows to your <Link href="/favorites" className="text-primary hover:underline">Planner</Link> and set reminders.</li>
             </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* Preparing for Your Trip */}
+      <section className="mt-16 pt-12 border-t border-border">
+        <h2 className="text-xl font-semibold mb-6">Preparing for Your Trip</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="rounded-xl border border-border p-5">
+            <h3 className="font-semibold mb-3">Trip Checklist</h3>
+            <ul className="text-sm text-muted-foreground space-y-2">
+              <li className="flex items-start gap-2">
+                <span className="text-primary mt-0.5">&#10003;</span>
+                Bring penny sleeves and top loaders
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary mt-0.5">&#10003;</span>
+                Set a budget before you go
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary mt-0.5">&#10003;</span>
+                Research prices on PokeShows before buying
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary mt-0.5">&#10003;</span>
+                Arrive early for the best selection
+              </li>
+            </ul>
+          </div>
+
+          <div className="rounded-xl border border-border p-5">
+            <h3 className="font-semibold mb-3">What to Bring</h3>
+            <p className="text-sm text-muted-foreground mb-3">
+              Stock up on supplies before your next show:
+            </p>
+            <ul className="text-sm space-y-2.5">
+              <li>
+                <a
+                  href={buildEbaySearchUrl({ searchQuery: 'pokemon card sleeves', customId: 'city-guide-sleeves' })}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="inline-flex items-center gap-1.5 text-primary font-medium hover:underline"
+                >
+                  Card Sleeves
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </li>
+              <li>
+                <a
+                  href={buildEbaySearchUrl({ searchQuery: 'card top loaders', customId: 'city-guide-toploaders' })}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="inline-flex items-center gap-1.5 text-primary font-medium hover:underline"
+                >
+                  Top Loaders
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </li>
+              <li>
+                <a
+                  href={buildEbaySearchUrl({ searchQuery: 'pokemon card binder', customId: 'city-guide-binder' })}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="inline-flex items-center gap-1.5 text-primary font-medium hover:underline"
+                >
+                  Card Binder
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </li>
+            </ul>
+            <div className="mt-4 pt-3 border-t border-border">
+              <Link
+                href="/buy/essentials"
+                className="text-sm font-medium text-primary hover:underline"
+              >
+                Browse all show day essentials &rarr;
+              </Link>
+            </div>
           </div>
         </div>
       </section>

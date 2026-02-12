@@ -200,3 +200,28 @@ export const digestPreferences = sqliteTable('digest_preferences', {
   metros: text('metros'), // JSON array of metro area slugs
   createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 });
+
+export const dealSubscribers = sqliteTable('deal_subscribers', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  email: text('email').notNull().unique(),
+  unsubscribed: integer('unsubscribed', { mode: 'boolean' }).default(false),
+  createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+});
+
+export const vendors = sqliteTable('vendors', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  slug: text('slug').notNull().unique(),
+  name: text('name').notNull(),
+  email: text('email').notNull(),
+  website: text('website'),
+  description: text('description'),
+  state: text('state').notNull(),
+  city: text('city'),
+  specialties: text('specialties'), // JSON array: ["vintage", "graded", "japanese"]
+  isVerified: integer('is_verified', { mode: 'boolean' }).default(false),
+  isFeatured: integer('is_featured', { mode: 'boolean' }).default(false),
+  createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+}, (table) => [
+  index('vendors_state_idx').on(table.state),
+  index('vendors_featured_idx').on(table.isFeatured),
+]);

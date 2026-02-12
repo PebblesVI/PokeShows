@@ -5,7 +5,8 @@ export const dynamic = 'force-dynamic';
 import { db } from '@/db';
 import { shows, cardOfTheDay, digestPreferences } from '@/db/schema';
 import { eq, gte, lte, and, asc, desc } from 'drizzle-orm';
-import { format, addDays } from 'date-fns';
+import { format, addDays, subDays } from 'date-fns';
+import { buildEbaySearchUrl } from '@/lib/ebay';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
@@ -59,6 +60,15 @@ export async function GET(request: NextRequest) {
       .orderBy(desc(cardOfTheDay.featuredDate))
       .limit(1);
 
+    // Fetch hot cards from the last 7 days (top 3 by TCGPlayer price)
+    const lastWeekStr = format(subDays(today, 7), 'yyyy-MM-dd');
+    const hotCards = await db
+      .select()
+      .from(cardOfTheDay)
+      .where(gte(cardOfTheDay.featuredDate, lastWeekStr))
+      .orderBy(desc(cardOfTheDay.tcgPlayerPrice))
+      .limit(3);
+
     const stateLabel = stateFilter ? ` in ${stateFilter}` : '';
     const subjectLine = `Pokemon Card Shows This Week${stateLabel} - ${formattedToday}`;
 
@@ -69,6 +79,7 @@ export async function GET(request: NextRequest) {
       formattedToday,
       upcomingShows,
       todayCard,
+      hotCards,
     });
 
     return new NextResponse(html, {
@@ -105,6 +116,7 @@ interface CardRow {
   imageSmall: string;
   imageLarge: string;
   tcgPlayerUrl: string | null;
+  tcgPlayerPrice: number | null;
   priceMid: number | null;
   featuredDate: string;
 }
@@ -116,6 +128,7 @@ function buildEmailHtml({
   formattedToday,
   upcomingShows,
   todayCard,
+  hotCards,
 }: {
   siteUrl: string;
   subjectLine: string;
@@ -123,6 +136,7 @@ function buildEmailHtml({
   formattedToday: string;
   upcomingShows: ShowRow[];
   todayCard: CardRow | undefined;
+  hotCards: CardRow[];
 }) {
   const YELLOW = '#FFCB05';
   const DARK_BG = '#1a1a2e';
@@ -292,6 +306,8 @@ function buildEmailHtml({
             </td>
           </tr>
 
+          ${hotCards.length > 0 ? buildHotCardsSection(hotCards, siteUrl) : ''}
+
           <!-- Footer -->
           <tr>
             <td style="padding: 28px 24px; text-align: center;">
@@ -318,6 +334,75 @@ function buildEmailHtml({
   </table>
 </body>
 </html>`;
+}
+
+function buildHotCardsSection(hotCards: CardRow[], siteUrl: string): string {
+  const YELLOW = '#FFCB05';
+  const DARK_BG = '#1a1a2e';
+  const TEXT_SECONDARY = '#6b7280';
+  const BORDER = '#e5e7eb';
+
+  const cardRows = hotCards.map((card) => {
+    const ebayUrl = buildEbaySearchUrl({
+      searchQuery: `${card.cardName} ${card.setName} pokemon card`,
+      customId: 'digest-hotcard',
+    });
+    const price = card.tcgPlayerPrice ? `$${card.tcgPlayerPrice.toFixed(2)}` : (card.priceMid ? `~$${card.priceMid.toFixed(2)}` : '');
+
+    return `
+      <tr>
+        <td style="padding: 16px 24px; border-bottom: 1px solid ${BORDER};">
+          <table cellpadding="0" cellspacing="0" border="0" width="100%">
+            <tr>
+              <td style="vertical-align: top; width: 60px;">
+                <img src="${card.imageSmall}" alt="${escapeHtml(card.cardName)}" width="50" style="border-radius: 4px; display: block;" />
+              </td>
+              <td style="vertical-align: top; padding-left: 12px;">
+                <div style="font-weight: 700; font-size: 15px; color: #1f2937; line-height: 1.3;">
+                  ${escapeHtml(card.cardName)}
+                </div>
+                <div style="color: ${TEXT_SECONDARY}; font-size: 13px; margin-top: 2px;">
+                  ${escapeHtml(card.setName)}${price ? ` &middot; ${price}` : ''}
+                </div>
+                <a href="${ebayUrl}" style="display: inline-block; margin-top: 6px; color: ${YELLOW}; font-size: 13px; font-weight: 600; text-decoration: none;">
+                  Buy on eBay &rarr;
+                </a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>`;
+  }).join('');
+
+  return `
+          <!-- Hot Cards This Week -->
+          <tr>
+            <td style="padding: 0;">
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top: 24px;">
+                <tr>
+                  <td style="background-color: ${DARK_BG}; padding: 16px 24px;">
+                    <div style="color: ${YELLOW}; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;">
+                      &#128293; Hot Cards This Week
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="background-color: #ffffff;">
+                    <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                      ${cardRows}
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="background-color: #ffffff; padding: 16px 24px; text-align: center; border-top: 1px solid ${BORDER};">
+                    <a href="${siteUrl}/buy" style="display: inline-block; background-color: ${YELLOW}; color: ${DARK_BG}; font-weight: 700; font-size: 14px; text-decoration: none; padding: 10px 28px; border-radius: 8px;">
+                      Browse All Deals
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>`;
 }
 
 function escapeHtml(str: string): string {

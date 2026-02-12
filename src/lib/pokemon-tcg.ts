@@ -4,7 +4,7 @@ export interface PokemonTcgCard {
   id: string;
   name: string;
   images: { small: string; large: string };
-  set: { name: string; series: string };
+  set: { id: string; name: string; series: string };
   rarity: string | null;
   artist: string | null;
   number: string;
@@ -191,6 +191,30 @@ export async function getCardsBySet(setId: string, limit = 50): Promise<PokemonT
 
   const data: ApiResponse = await response.json();
   return data.data || [];
+}
+
+export async function searchCardsAdvanced(
+  query: string,
+  sort: string,
+  limit = 20,
+): Promise<{ cards: PokemonTcgCard[]; totalCount: number }> {
+  const params = new URLSearchParams({
+    q: query,
+    pageSize: String(limit),
+    orderBy: sort,
+  });
+
+  const response = await fetch(`${API_BASE}/cards?${params}`, {
+    headers: getHeaders(),
+    next: { revalidate: 3600 },
+  });
+
+  if (!response.ok) {
+    return { cards: [], totalCount: 0 };
+  }
+
+  const data: ApiResponse = await response.json();
+  return { cards: data.data || [], totalCount: data.totalCount };
 }
 
 export async function getRandomHoloCards(count = 25): Promise<PokemonTcgCard[]> {

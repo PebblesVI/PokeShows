@@ -135,8 +135,14 @@ export default async function ShowDetailPage({
               />
             </div>
             <Link
+              href="/buy/essentials"
+              className="block text-center text-sm font-medium text-primary hover:underline mt-4"
+            >
+              Show Day Essentials &rarr;
+            </Link>
+            <Link
               href="/buy"
-              className="block text-center text-sm text-primary hover:underline mt-4"
+              className="block text-center text-sm text-muted-foreground hover:text-primary hover:underline mt-2"
             >
               Browse all Pokemon cards &rarr;
             </Link>

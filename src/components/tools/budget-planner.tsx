@@ -1,16 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { DollarSign, ExternalLink } from 'lucide-react';
+import Link from 'next/link';
+import { DollarSign, ExternalLink, ShoppingBag } from 'lucide-react';
 import { buildEbaySearchUrl } from '@/lib/ebay';
 
 const CATEGORIES = [
-  { name: 'Admission', percent: 5, description: 'Entry fees for shows', query: '' },
-  { name: 'Cards & Singles', percent: 45, description: 'Individual cards and sealed product', query: 'pokemon card single rare' },
-  { name: 'Sealed Product', percent: 25, description: 'Booster boxes, ETBs, tins', query: 'pokemon booster box sealed' },
-  { name: 'Supplies', percent: 10, description: 'Sleeves, binders, top loaders', query: 'pokemon card sleeves binder top loader' },
-  { name: 'Food & Drinks', percent: 10, description: 'Meals and snacks at the event', query: '' },
-  { name: 'Grading', percent: 5, description: 'PSA/CGC/BGS submission fees', query: 'PSA grading submission pokemon' },
+  { name: 'Admission', percent: 5, description: 'Entry fees for shows', query: '', shopUrl: '' },
+  { name: 'Cards & Singles', percent: 45, description: 'Individual cards and sealed product', query: 'pokemon card single rare', shopUrl: '/buy/category/singles' },
+  { name: 'Sealed Product', percent: 25, description: 'Booster boxes, ETBs, tins', query: 'pokemon booster box sealed', shopUrl: '/buy/category/booster-boxes' },
+  { name: 'Supplies', percent: 10, description: 'Sleeves, binders, top loaders', query: 'pokemon card sleeves binder top loader', shopUrl: '/buy/category/accessories' },
+  { name: 'Food & Drinks', percent: 10, description: 'Meals and snacks at the event', query: '', shopUrl: '' },
+  { name: 'Grading', percent: 5, description: 'PSA/CGC/BGS submission fees', query: 'PSA grading submission pokemon', shopUrl: '/buy/category/graded-cards' },
 ];
 
 export function BudgetPlanner() {
@@ -75,15 +76,28 @@ export function BudgetPlanner() {
                 />
                 <span className="text-sm text-muted-foreground w-10 text-right">{allocations[i]}%</span>
               </div>
-              {category.query && (
-                <a
-                  href={buildEbaySearchUrl({ searchQuery: category.query, customId: 'budget-planner' })}
-                  target="_blank"
-                  rel="noopener noreferrer nofollow"
-                  className="inline-flex items-center gap-1 mt-2 text-xs text-primary hover:underline"
-                >
-                  Shop {category.name} on eBay <ExternalLink className="h-3 w-3" />
-                </a>
+              {(category.query || category.shopUrl) && (
+                <div className="flex flex-wrap items-center gap-3 mt-2">
+                  {category.query && (
+                    <a
+                      href={buildEbaySearchUrl({ searchQuery: category.query, customId: 'budget-planner' })}
+                      target="_blank"
+                      rel="noopener noreferrer nofollow"
+                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                    >
+                      Shop {category.name} on eBay <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                  {category.shopUrl && (
+                    <Link
+                      href={category.shopUrl}
+                      className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary hover:underline"
+                    >
+                      <ShoppingBag className="h-3 w-3" />
+                      Browse {category.name}
+                    </Link>
+                  )}
+                </div>
               )}
             </div>
           );

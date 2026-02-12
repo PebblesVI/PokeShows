@@ -3,6 +3,7 @@ import { db } from '@/db';
 import { showReminders, shows } from '@/db/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { format, subDays } from 'date-fns';
+import { buildEbaySearchUrl } from '@/lib/ebay';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -47,6 +48,34 @@ function buildFollowupEmailHtml(showName: string, showSlug: string, city: string
           <a href="${siteUrl}/shows/state/${state.toLowerCase()}" style="display: inline-block; margin-top: 8px; color: ${YELLOW}; font-size: 13px; font-weight: 600; text-decoration: none;">
             Browse upcoming shows &rarr;
           </a>
+
+          <!-- Protect Your New Cards -->
+          <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+            <h3 style="margin: 0 0 16px; font-size: 18px; font-weight: 700; color: #1f2937;">Protect Your New Cards</h3>
+            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td style="padding-bottom: 10px;">
+                  <a href="${buildEbaySearchUrl({ searchQuery: 'pokemon card sleeves top loaders', customId: 'followup-sleeves' })}" style="display: block; background-color: ${YELLOW}; color: ${DARK_BG}; font-weight: 700; font-size: 14px; text-decoration: none; padding: 12px 20px; border-radius: 8px; text-align: center;">
+                    Card Sleeves &amp; Top Loaders
+                  </a>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding-bottom: 10px;">
+                  <a href="${buildEbaySearchUrl({ searchQuery: 'PSA grading submission pokemon', customId: 'followup-grading' })}" style="display: block; background-color: ${YELLOW}; color: ${DARK_BG}; font-weight: 700; font-size: 14px; text-decoration: none; padding: 12px 20px; border-radius: 8px; text-align: center;">
+                    Grading Submissions
+                  </a>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <a href="${buildEbaySearchUrl({ searchQuery: 'pokemon card binder storage', customId: 'followup-storage' })}" style="display: block; background-color: ${YELLOW}; color: ${DARK_BG}; font-weight: 700; font-size: 14px; text-decoration: none; padding: 12px 20px; border-radius: 8px; text-align: center;">
+                    Card Storage &amp; Binders
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </div>
         </td></tr>
         <tr><td style="padding: 20px 24px; text-align: center;">
           <div style="color: #9ca3af; font-size: 12px;">You received this because you set a reminder for this show on PokeShows.</div>

@@ -17,6 +17,9 @@ export function ShowCard({ show }: { show: Show }) {
         <div className="flex items-start justify-between gap-2 mb-3">
           <h3 className="font-semibold leading-tight">{show.name}</h3>
           <div className="flex items-center gap-1 shrink-0">
+            {show.isFeatured && (
+              <Badge className="bg-yellow-400 text-yellow-900 rounded-full text-xs">Featured</Badge>
+            )}
             {show.isPokemonSpecific && (
               <Badge variant="default" className="rounded-full text-xs">Pokemon</Badge>
             )}

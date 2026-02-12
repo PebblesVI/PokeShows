@@ -6,6 +6,7 @@ import { UpcomingShows } from '@/components/home/upcoming-shows';
 import { FeaturedPicks } from '@/components/home/featured-picks';
 import { TrendingCards } from '@/components/home/trending-cards';
 import { NewsletterSignup } from '@/components/home/newsletter-signup';
+import { DealSignup } from '@/components/home/deal-signup';
 import { CardRoller } from '@/components/card-of-the-day/card-roller';
 import { getCardOfTheDay, getCardArchive } from '@/db/queries/cards';
 import { getUpcomingShows, getFeaturedShows, getActiveShowCount } from '@/db/queries/shows';
@@ -82,6 +83,10 @@ export default async function HomePage() {
 
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <NewsletterSignup />
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <DealSignup />
       </section>
 
       <section className="bg-muted/30">

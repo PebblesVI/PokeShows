@@ -9,6 +9,7 @@ import { ListingGrid } from '@/components/buy/listing-grid';
 import { getListingsByCardSlug } from '@/db/queries/listings';
 import { slugToSearchQuery, cardToSlug } from '@/lib/card-slug';
 import { buildEbaySearchUrl } from '@/lib/ebay';
+import { buildTcgPlayerAffiliateUrl } from '@/lib/tcgplayer-affiliate';
 import { db } from '@/db';
 import { cardOfTheDay } from '@/db/schema';
 import { sql, ne, desc } from 'drizzle-orm';
@@ -183,15 +184,28 @@ export default async function CardBuyPage({
               </div>
             )}
 
-            <a
-              href={ebaySearchUrl}
-              target="_blank"
-              rel="noopener noreferrer nofollow"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-full hover:opacity-90 transition-opacity"
-            >
-              Search on eBay
-              <ExternalLink className="h-4 w-4" />
-            </a>
+            <div className="flex flex-wrap gap-3">
+              <a
+                href={ebaySearchUrl}
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-full hover:opacity-90 transition-opacity"
+              >
+                Search on eBay
+                <ExternalLink className="h-4 w-4" />
+              </a>
+              {card?.tcgPlayerUrl && (
+                <a
+                  href={buildTcgPlayerAffiliateUrl(card.tcgPlayerUrl)}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="inline-flex items-center gap-2 px-6 py-3 border border-border rounded-full font-semibold hover:border-primary/30 hover:text-primary transition-all duration-200"
+                >
+                  Buy on TCGPlayer
+                  <ExternalLink className="h-4 w-4" />
+                </a>
+              )}
+            </div>
           </div>
         </div>
 

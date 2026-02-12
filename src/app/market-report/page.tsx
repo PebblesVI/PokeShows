@@ -7,6 +7,7 @@ import { sql, desc, asc, eq } from 'drizzle-orm';
 import { format, subDays } from 'date-fns';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import Link from 'next/link';
+import { cardToSlug } from '@/lib/card-slug';
 
 export const metadata: Metadata = {
   title: 'Monthly Market Report',
@@ -16,6 +17,7 @@ export const metadata: Metadata = {
 interface CardMover {
   pokemonTcgId: string;
   cardName: string | null;
+  setName: string | null;
   oldPrice: number;
   newPrice: number;
   change: number;
@@ -57,6 +59,7 @@ async function getTopMovers(): Promise<{ gainers: CardMover[]; losers: CardMover
     movers.push({
       pokemonTcgId,
       cardName: null,
+      setName: null,
       oldPrice: prices.earliest,
       newPrice: prices.latest,
       change,
@@ -70,13 +73,16 @@ async function getTopMovers(): Promise<{ gainers: CardMover[]; losers: CardMover
     const cards = await db.select({
       pokemonTcgId: cardOfTheDay.pokemonTcgId,
       cardName: cardOfTheDay.cardName,
+      setName: cardOfTheDay.setName,
     })
       .from(cardOfTheDay)
       .where(sql`${cardOfTheDay.pokemonTcgId} IN (${sql.join(cardIds.map(id => sql`${id}`), sql`, `)})`);
 
-    const nameMap = new Map(cards.map(c => [c.pokemonTcgId, c.cardName]));
+    const cardMap = new Map(cards.map(c => [c.pokemonTcgId, { cardName: c.cardName, setName: c.setName }]));
     for (const mover of movers) {
-      mover.cardName = nameMap.get(mover.pokemonTcgId) ?? mover.pokemonTcgId;
+      const info = cardMap.get(mover.pokemonTcgId);
+      mover.cardName = info?.cardName ?? mover.pokemonTcgId;
+      mover.setName = info?.setName ?? null;
     }
   }
 
@@ -126,7 +132,18 @@ function MoverTable({ title, movers, type }: { title: string; movers: CardMover[
             {movers.map((mover, i) => (
               <tr key={mover.pokemonTcgId} className="border-b border-border last:border-0">
                 <td className="p-3 text-sm text-muted-foreground">{i + 1}</td>
-                <td className="p-3 text-sm font-medium">{mover.cardName || mover.pokemonTcgId}</td>
+                <td className="p-3 text-sm font-medium">
+                  {mover.cardName && mover.setName ? (
+                    <Link
+                      href={`/buy/${cardToSlug(mover.cardName, mover.setName)}`}
+                      className="text-primary hover:underline"
+                    >
+                      {mover.cardName}
+                    </Link>
+                  ) : (
+                    mover.cardName || mover.pokemonTcgId
+                  )}
+                </td>
                 <td className="p-3 text-sm text-right text-muted-foreground">${mover.oldPrice.toFixed(2)}</td>
                 <td className="p-3 text-sm text-right font-medium">${mover.newPrice.toFixed(2)}</td>
                 <td className={`p-3 text-sm text-right font-semibold ${colorClass}`}>

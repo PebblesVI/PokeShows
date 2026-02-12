@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { ExternalLink, ShoppingBag } from 'lucide-react';
 import { buildEbaySearchUrl } from '@/lib/ebay';
+import { buildTcgPlayerAffiliateUrl } from '@/lib/tcgplayer-affiliate';
 import { cardToSlug } from '@/lib/card-slug';
 import { PriceChart } from '@/components/card-of-the-day/price-chart';
 import { AddToWishlistButton } from '@/components/wishlist/add-to-wishlist-button';
@@ -125,6 +126,17 @@ export function CardHero({ card }: { card: CardOfTheDay }) {
             Buy on eBay
             <ExternalLink className="h-4 w-4" />
           </a>
+          {card.tcgPlayerUrl && (
+            <a
+              href={buildTcgPlayerAffiliateUrl(card.tcgPlayerUrl)}
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              className="inline-flex items-center gap-2 px-6 py-3 border border-border rounded-full font-semibold hover:border-primary/30 hover:text-primary transition-all duration-200"
+            >
+              Buy on TCGPlayer
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          )}
           <Link
             href={`/buy/${cardToSlug(card.cardName, card.setName)}`}
             className="inline-flex items-center gap-2 px-6 py-3 border border-border rounded-full font-medium hover:border-primary/30 hover:text-primary transition-all duration-200"
