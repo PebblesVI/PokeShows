@@ -1,12 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
+
+export const dynamic = 'force-dynamic';
+
 import { db } from '@/db';
-import { shows, cardOfTheDay } from '@/db/schema';
+import { shows, cardOfTheDay, digestPreferences } from '@/db/schema';
 import { eq, gte, lte, and, asc, desc } from 'drizzle-orm';
 import { format, addDays } from 'date-fns';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
-  const stateFilter = searchParams.get('state')?.toUpperCase() || null;
+  let stateFilter = searchParams.get('state')?.toUpperCase() || null;
+  const emailFilter = searchParams.get('email') || null;
+
+  // If email provided, look up digest preferences
+  if (emailFilter && !stateFilter) {
+    try {
+      const pref = await db.query.digestPreferences.findFirst({
+        where: eq(digestPreferences.email, emailFilter),
+      });
+      if (pref?.state) {
+        stateFilter = pref.state;
+      }
+    } catch {
+      // Ignore - proceed with default digest
+    }
+  }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pokeshows.com';
 

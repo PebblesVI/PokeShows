@@ -65,6 +65,47 @@ export default async function CityShowsPage({
 
       <ShowList shows={shows} />
 
+      {/* City Guide */}
+      <section className="mt-16 pt-12 border-t border-border">
+        <h2 className="text-xl font-semibold mb-6">
+          Collector&apos;s Guide to {parsed.city}
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="rounded-xl border border-border p-5">
+            <h3 className="font-semibold mb-2">Getting There</h3>
+            <ul className="text-sm text-muted-foreground space-y-1.5">
+              <li>Most venues in {parsed.city} have on-site parking, but arrive early for popular shows.</li>
+              <li>Check the venue address on the show detail page for directions and parking info.</li>
+              <li>Consider carpooling with other collectors to save on parking.</li>
+            </ul>
+          </div>
+          <div className="rounded-xl border border-border p-5">
+            <h3 className="font-semibold mb-2">Tips for {parsed.city} Shows</h3>
+            <ul className="text-sm text-muted-foreground space-y-1.5">
+              <li>Bring cash &mdash; many vendors prefer it and some offer cash discounts.</li>
+              <li>Arrive early for the best selection and any exclusive deals.</li>
+              <li>Bring your own binders, sleeves, and top loaders to protect purchases.</li>
+            </ul>
+          </div>
+          <div className="rounded-xl border border-border p-5">
+            <h3 className="font-semibold mb-2">What to Expect</h3>
+            <ul className="text-sm text-muted-foreground space-y-1.5">
+              <li>Vendors selling singles, sealed product, graded cards, and accessories.</li>
+              <li>Opportunities to trade with other collectors and find rare cards.</li>
+              <li>Some shows feature tournaments, raffles, and pack battles.</li>
+            </ul>
+          </div>
+          <div className="rounded-xl border border-border p-5">
+            <h3 className="font-semibold mb-2">Plan Ahead</h3>
+            <ul className="text-sm text-muted-foreground space-y-1.5">
+              <li>Use our <Link href="/tools/budget" className="text-primary hover:underline">Budget Planner</Link> to manage your spending.</li>
+              <li>Add cards to your <Link href="/wishlist" className="text-primary hover:underline">Wishlist</Link> so you know what to look for.</li>
+              <li>Save shows to your <Link href="/favorites" className="text-primary hover:underline">Planner</Link> and set reminders.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
       <section className="mt-16 pt-12 border-t border-border">
         <h2 className="text-xl font-semibold mb-4">
           More Shows in{' '}

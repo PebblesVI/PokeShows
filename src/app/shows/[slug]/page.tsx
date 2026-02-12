@@ -8,8 +8,14 @@ import { ShowList } from '@/components/shows/show-list';
 import Link from 'next/link';
 import { AffiliateLink } from '@/components/shop/affiliate-link';
 import { BookmarkButton } from '@/components/favorites/bookmark-button';
+import { CalendarExportButton } from '@/components/shows/calendar-export-button';
+import { ReminderForm } from '@/components/shows/reminder-form';
 import { ShareButtons } from '@/components/ui/share-buttons';
 import { JsonLdEvent } from '@/components/seo/json-ld-event';
+import { GoingButton } from '@/components/shows/going-button';
+import { ReviewForm } from '@/components/shows/review-form';
+import { ReviewList } from '@/components/shows/review-list';
+import { FollowOrganizerButton } from '@/components/shows/follow-organizer-button';
 
 export async function generateMetadata({
   params,
@@ -69,7 +75,9 @@ export default async function ShowDetailPage({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <ShowCountdown startDate={show.startDate} startTime={show.startTime} />
           <div className="flex items-center gap-3">
+            <GoingButton showSlug={show.slug} size="default" />
             <ShareButtons url={shareUrl} title={show.name} description={shareDescription} />
+            <CalendarExportButton show={show} size="default" />
             <BookmarkButton slug={show.slug} size="default" />
           </div>
         </div>
@@ -77,16 +85,37 @@ export default async function ShowDetailPage({
         <ShowDetailHero show={show} />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mt-12">
-          <div className="md:col-span-2">
+          <div className="md:col-span-2 space-y-12">
             {show.description && (
               <>
-                <h2 className="text-xl font-semibold mb-4">Event Details</h2>
-                <p className="text-muted-foreground leading-relaxed">{show.description}</p>
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">Event Details</h2>
+                  <p className="text-muted-foreground leading-relaxed">{show.description}</p>
+                </div>
               </>
             )}
+
+            {show.organizerName && (
+              <div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-muted-foreground">Organized by <span className="font-medium text-foreground">{show.organizerName}</span></span>
+                  <FollowOrganizerButton organizerName={show.organizerName} />
+                </div>
+              </div>
+            )}
+
+            <div id="reviews">
+              <ReviewList showSlug={show.slug} />
+              <div className="mt-8">
+                <ReviewForm showSlug={show.slug} />
+              </div>
+            </div>
           </div>
 
-          <aside>
+          <aside className="space-y-8">
+            <ReminderForm showSlug={show.slug} showName={show.name} showDate={show.startDate} />
+
+            <div>
             <h3 className="text-lg font-semibold mb-4">Shop for the Show</h3>
             <div className="space-y-3">
               <AffiliateLink
@@ -111,6 +140,7 @@ export default async function ShowDetailPage({
             >
               Browse all Pokemon cards &rarr;
             </Link>
+            </div>
           </aside>
         </div>
 

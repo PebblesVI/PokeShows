@@ -4,6 +4,7 @@ import { Metadata } from 'next';
 import { CardHero } from '@/components/card-of-the-day/card-hero';
 import { CardArchiveList } from '@/components/card-of-the-day/card-archive-list';
 import { CardRoller } from '@/components/card-of-the-day/card-roller';
+import { StreakCounter } from '@/components/card-of-the-day/streak-counter';
 import { getCardOfTheDay, getCardArchive } from '@/db/queries/cards';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -38,7 +39,10 @@ export default async function CardOfTheDayPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-      <h1 className="text-3xl font-bold mb-10">Pokemon Card of the Day</h1>
+      <div className="flex items-center justify-between mb-10">
+        <h1 className="text-3xl font-bold">Pokemon Card of the Day</h1>
+        <StreakCounter />
+      </div>
 
       {todayCard ? (
         <CardHero card={todayCard} />

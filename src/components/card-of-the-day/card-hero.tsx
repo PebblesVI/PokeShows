@@ -6,6 +6,7 @@ import { buildEbaySearchUrl } from '@/lib/ebay';
 import { cardToSlug } from '@/lib/card-slug';
 import { PriceChart } from '@/components/card-of-the-day/price-chart';
 import { AddToWishlistButton } from '@/components/wishlist/add-to-wishlist-button';
+import { PriceAlertButton } from '@/components/shows/price-alert-button';
 import type { CardOfTheDay } from '@/types/card';
 
 function formatVariant(variant: string): string {
@@ -138,6 +139,11 @@ export function CardHero({ card }: { card: CardOfTheDay }) {
             imageSmall={card.imageSmall}
             rarity={card.rarity}
             size="default"
+          />
+          <PriceAlertButton
+            pokemonTcgId={card.pokemonTcgId}
+            cardName={card.cardName}
+            currentPrice={card.tcgPlayerPrice ?? card.priceMid}
           />
         </div>
       </div>

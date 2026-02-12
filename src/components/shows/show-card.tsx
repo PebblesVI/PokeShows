@@ -4,6 +4,7 @@ import { Calendar, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
 import type { Show } from '@/types/show';
 import { BookmarkButton } from '@/components/favorites/bookmark-button';
+import { CompareButton } from '@/components/shows/compare-button';
 
 export function ShowCard({ show }: { show: Show }) {
   const startDate = new Date(show.startDate);
@@ -19,6 +20,7 @@ export function ShowCard({ show }: { show: Show }) {
             {show.isPokemonSpecific && (
               <Badge variant="default" className="rounded-full text-xs">Pokemon</Badge>
             )}
+            <CompareButton slug={show.slug} />
             <BookmarkButton slug={show.slug} />
           </div>
         </div>
@@ -40,9 +42,15 @@ export function ShowCard({ show }: { show: Show }) {
           )}
 
           {show.admissionPrice && (
-            <p className="text-xs">
-              Admission: <span className="text-foreground">{show.admissionPrice}</span>
-            </p>
+            show.admissionPrice.toLowerCase() === 'free' || show.admissionPrice === '$0' ? (
+              <span className="inline-flex items-center text-xs font-semibold text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded-full">
+                Free Admission
+              </span>
+            ) : (
+              <p className="text-xs font-medium">
+                Admission: <span className="text-foreground">{show.admissionPrice}</span>
+              </p>
+            )
           )}
         </div>
 

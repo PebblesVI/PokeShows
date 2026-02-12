@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { ShowList } from '@/components/shows/show-list';
 import { JsonLdItemList } from '@/components/seo/json-ld-item-list';
 import { JsonLdFaq } from '@/components/seo/json-ld-faq';
+import { ShowAlertForm } from '@/components/shows/show-alert-form';
 
 export async function generateMetadata({
   params,
@@ -66,6 +67,10 @@ export default async function ShowsByStatePage({
       </p>
 
       <ShowList shows={shows} />
+
+      <div className="mt-8">
+        <ShowAlertForm state={stateUpper} stateName={stateName} />
+      </div>
 
       {stateCities.length > 0 && (
         <section className="mt-20 pt-12 border-t border-border">

@@ -2,10 +2,12 @@
 
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, MapPin, Trash2, ShoppingBag, ExternalLink } from 'lucide-react';
+import { Calendar, MapPin, Trash2, ShoppingBag, ExternalLink, Bell } from 'lucide-react';
 import { format } from 'date-fns';
 import { useFavorites } from './favorites-provider';
 import { ShowCountdown } from '@/components/shows/show-countdown';
+import { CalendarExportButton } from '@/components/shows/calendar-export-button';
+import { PreShowShoppingList } from '@/components/favorites/pre-show-shopping-list';
 import { buildEbaySearchUrl } from '@/lib/ebay';
 import type { Show } from '@/types/show';
 
@@ -45,13 +47,23 @@ export function PlannerShowCard({ show }: { show: Show }) {
             <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {show.city}, {show.state}</span>
           </div>
         </div>
-        <button
-          onClick={() => toggleFavorite(show.slug)}
-          className="p-2 rounded-full hover:bg-destructive/10 hover:text-destructive transition-colors"
-          aria-label="Remove from planner"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-1">
+          <CalendarExportButton show={show} />
+          <a
+            href={`/shows/${show.slug}#reminder`}
+            className="p-1.5 rounded-full hover:bg-accent/20 transition-colors"
+            aria-label="Set reminder"
+          >
+            <Bell className="h-4 w-4 text-muted-foreground" />
+          </a>
+          <button
+            onClick={() => toggleFavorite(show.slug)}
+            className="p-2 rounded-full hover:bg-destructive/10 hover:text-destructive transition-colors"
+            aria-label="Remove from planner"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       {/* Countdown */}
@@ -85,6 +97,9 @@ export function PlannerShowCard({ show }: { show: Show }) {
           ))}
         </div>
       </div>
+
+      {/* Pre-Show Shopping List */}
+      <PreShowShoppingList showSlug={show.slug} />
 
       {/* Gear Up section */}
       <div className="pt-4 border-t border-border">

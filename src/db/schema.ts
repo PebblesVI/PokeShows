@@ -28,6 +28,8 @@ export const shows = sqliteTable('shows', {
   createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
   updatedAt: text('updated_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
   lastScrapedAt: text('last_scraped_at'),
+  latitude: real('latitude'),
+  longitude: real('longitude'),
   isFeatured: integer('is_featured', { mode: 'boolean' }).default(false),
   isActive: integer('is_active', { mode: 'boolean' }).default(true),
 }, (table) => [
@@ -106,6 +108,18 @@ export const scraperRuns = sqliteTable('scraper_runs', {
   runAt: text('run_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 });
 
+export const showReminders = sqliteTable('show_reminders', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  email: text('email').notNull(),
+  showSlug: text('show_slug').notNull(),
+  remindBefore: text('remind_before').notNull(), // "1d" | "3d" | "7d"
+  sent: integer('sent', { mode: 'boolean' }).default(false),
+  createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+}, (table) => [
+  index('reminders_sent_slug_idx').on(table.sent, table.showSlug),
+  uniqueIndex('reminders_email_show_idx').on(table.email, table.showSlug),
+]);
+
 export const cardPriceHistory = sqliteTable('card_price_history', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   pokemonTcgId: text('pokemon_tcg_id').notNull(),
@@ -121,3 +135,68 @@ export const cardPriceHistory = sqliteTable('card_price_history', {
   index('cph_card_date_idx').on(table.pokemonTcgId, table.recordedDate),
   uniqueIndex('cph_card_date_unique_idx').on(table.pokemonTcgId, table.recordedDate),
 ]);
+
+export const showCheckins = sqliteTable('show_checkins', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  email: text('email').notNull(),
+  showSlug: text('show_slug').notNull(),
+  createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+}, (table) => [
+  uniqueIndex('checkins_email_show_idx').on(table.email, table.showSlug),
+  index('checkins_show_slug_idx').on(table.showSlug),
+]);
+
+export const priceAlerts = sqliteTable('price_alerts', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  email: text('email').notNull(),
+  pokemonTcgId: text('pokemon_tcg_id').notNull(),
+  cardName: text('card_name').notNull(),
+  targetPrice: real('target_price').notNull(),
+  sent: integer('sent', { mode: 'boolean' }).default(false),
+  createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+}, (table) => [
+  uniqueIndex('price_alerts_email_card_idx').on(table.email, table.pokemonTcgId),
+  index('price_alerts_sent_idx').on(table.sent),
+]);
+
+export const showAlerts = sqliteTable('show_alerts', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  email: text('email').notNull(),
+  state: text('state').notNull(),
+  city: text('city'),
+  createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+}, (table) => [
+  uniqueIndex('show_alerts_email_state_city_idx').on(table.email, table.state, table.city),
+  index('show_alerts_state_idx').on(table.state),
+]);
+
+export const organizerFollows = sqliteTable('organizer_follows', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  email: text('email').notNull(),
+  organizerName: text('organizer_name').notNull(),
+  createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+}, (table) => [
+  uniqueIndex('org_follows_email_org_idx').on(table.email, table.organizerName),
+  index('org_follows_organizer_idx').on(table.organizerName),
+]);
+
+export const showReviews = sqliteTable('show_reviews', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  showSlug: text('show_slug').notNull(),
+  email: text('email').notNull(),
+  displayName: text('display_name').notNull(),
+  rating: integer('rating').notNull(),
+  text: text('text'),
+  createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+}, (table) => [
+  index('reviews_show_slug_idx').on(table.showSlug),
+  uniqueIndex('reviews_email_show_idx').on(table.email, table.showSlug),
+]);
+
+export const digestPreferences = sqliteTable('digest_preferences', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  email: text('email').notNull().unique(),
+  state: text('state'),
+  metros: text('metros'), // JSON array of metro area slugs
+  createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+});
