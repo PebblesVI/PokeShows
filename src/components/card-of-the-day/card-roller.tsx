@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useRef } from "react"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Dices, Sparkles, ExternalLink, Loader2 } from "lucide-react"
@@ -56,10 +56,15 @@ export function CardRoller({
   const [card, setCard] = useState<RolledCard | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isHoloLoading, setIsHoloLoading] = useState(false)
+  const [flipKey, setFlipKey] = useState(0)
 
-  // Use either the rolled card or the initial card for display
+  // Card pools for instant re-rolls
+  const normalPool = useRef<RolledCard[]>([])
+  const holoPool = useRef<RolledCard[]>([])
+
   const displayCard = card
     ? {
+        id: card.id,
         name: card.name,
         setName: card.setName,
         rarity: card.rarity,
@@ -72,6 +77,7 @@ export function CardRoller({
       }
     : initialCard
       ? {
+          id: null as string | null,
           name: initialCard.cardName,
           setName: initialCard.setName,
           rarity: initialCard.rarity,
@@ -84,7 +90,33 @@ export function CardRoller({
         }
       : null
 
+  const fetchPool = useCallback(async (holo: boolean): Promise<RolledCard[]> => {
+    const url = holo ? "/api/random-card?holo=true" : "/api/random-card"
+    const response = await fetch(url)
+    if (!response.ok) throw new Error("Failed to fetch cards")
+    const data = await response.json()
+    return data.cards || []
+  }, [])
+
   const rollCard = useCallback(async (holo: boolean) => {
+    const pool = holo ? holoPool : normalPool
+
+    // If pool has cards, use one instantly
+    if (pool.current.length > 0) {
+      const next = pool.current.pop()!
+      setCard(next)
+      setFlipKey((k) => k + 1)
+
+      // Refill in the background when pool gets low
+      if (pool.current.length < 3) {
+        fetchPool(holo).then((cards) => {
+          pool.current.push(...cards)
+        }).catch(() => {})
+      }
+      return
+    }
+
+    // First roll — need to fetch
     if (holo) {
       setIsHoloLoading(true)
     } else {
@@ -92,18 +124,20 @@ export function CardRoller({
     }
 
     try {
-      const url = holo ? "/api/random-card?holo=true" : "/api/random-card"
-      const response = await fetch(url)
-      if (!response.ok) throw new Error("Failed to fetch card")
-      const data: RolledCard = await response.json()
-      setCard(data)
+      const cards = await fetchPool(holo)
+      if (cards.length > 0) {
+        const next = cards.pop()!
+        pool.current = cards
+        setCard(next)
+        setFlipKey((k) => k + 1)
+      }
     } catch (error) {
       console.error("Failed to roll card:", error)
     } finally {
       setIsLoading(false)
       setIsHoloLoading(false)
     }
-  }, [])
+  }, [fetchPool])
 
   if (compact) {
     return (
@@ -113,11 +147,12 @@ export function CardRoller({
           {displayCard ? (
             <div className="relative">
               <Image
+                key={flipKey}
                 src={displayCard.imageLarge}
                 alt={displayCard.name}
                 width={367}
                 height={512}
-                className={`rounded-xl shadow-lg transition-opacity duration-300 ${isLoading || isHoloLoading ? "opacity-50" : ""}`}
+                className={`rounded-xl shadow-lg transition-all duration-300 ${isLoading || isHoloLoading ? "opacity-50 scale-95" : "animate-in fade-in zoom-in-95 duration-300"}`}
               />
               {(isLoading || isHoloLoading) && (
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -234,7 +269,10 @@ export function CardRoller({
       </div>
 
       {card && (
-        <div className="flex flex-col md:flex-row gap-8 items-start w-full mt-4 p-6 rounded-xl border border-border bg-muted/30">
+        <div
+          key={flipKey}
+          className="flex flex-col md:flex-row gap-8 items-start w-full mt-4 p-6 rounded-xl border-2 border-primary/20 bg-primary/5 animate-in fade-in slide-in-from-bottom-4 duration-300"
+        >
           <div className="w-full md:w-1/3 max-w-xs mx-auto md:mx-0">
             <Image
               src={card.imageLarge}
@@ -246,7 +284,7 @@ export function CardRoller({
           </div>
           <div className="flex-1">
             <p className="text-sm text-primary font-medium mb-1 tracking-wide uppercase">
-              Random Roll
+              You rolled:
             </p>
             <h3 className="text-2xl font-bold mb-4 tracking-tight">
               {card.name}
@@ -283,7 +321,7 @@ export function CardRoller({
                 </div>
               )}
             </div>
-            <div className="flex flex-wrap items-center gap-3 mt-3">
+            <div className="flex flex-wrap items-center gap-3">
               {card.tcgPlayerUrl && (
                 <a
                   href={card.tcgPlayerUrl}

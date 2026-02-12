@@ -13,7 +13,7 @@ export function HeroSection({ showCount }: { showCount: number }) {
 
   return (
     <section className="bg-muted/30">
-      <div className="mx-auto max-w-7xl px-4 py-20 md:py-28 sm:px-6 lg:px-8 text-center">
+      <div className="mx-auto max-w-7xl px-4 py-12 md:py-16 sm:px-6 lg:px-8 text-center">
         <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 tracking-tight">
           Find <span className="text-primary">Pokemon Card Shows</span> Near You
         </h1>

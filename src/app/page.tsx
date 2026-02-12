@@ -24,14 +24,14 @@ export default async function HomePage() {
       <HeroSection showCount={showCount} />
 
       {featuredShows.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold mb-8">Featured Shows</h2>
+        <section className="mx-auto max-w-7xl px-4 pt-10 pb-6 sm:px-6 lg:px-8">
+          <h2 className="text-2xl font-bold mb-6">Featured Shows</h2>
           <UpcomingShows shows={featuredShows} />
         </section>
       )}
 
-      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between mb-8">
+      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold">Upcoming Shows</h2>
           <Link href="/shows" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-200">
             View all &rarr;
@@ -42,8 +42,8 @@ export default async function HomePage() {
 
       {/* Card of the Day — compact section with roller */}
       <section className="bg-muted/30">
-        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-8">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold">Card of the Day</h2>
             <Link href="/card-of-the-day" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-200">
               View archive &rarr;
@@ -69,27 +69,24 @@ export default async function HomePage() {
       </section>
 
       {recentCards.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-2xl font-bold">Trending Cards</h2>
+        <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold">Recent Featured Cards</h2>
             <Link href="/card-of-the-day" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-200">
               See all &rarr;
             </Link>
           </div>
-          <p className="text-muted-foreground text-sm mb-8">
-            Recent featured cards — click any card to shop on eBay.
-          </p>
           <TrendingCards cards={recentCards} />
         </section>
       )}
 
-      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <NewsletterSignup />
       </section>
 
       <section className="bg-muted/30">
-        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold mb-8">Shop Pokemon Cards</h2>
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+          <h2 className="text-2xl font-bold mb-6">Shop Pokemon Cards</h2>
           <FeaturedPicks />
         </div>
       </section>

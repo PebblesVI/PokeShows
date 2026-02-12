@@ -77,23 +77,34 @@ export async function getTotalCardCount(): Promise<number> {
   return getCachedTotalCount();
 }
 
-export async function getRandomCard(): Promise<PokemonTcgCard> {
+export async function getRandomCards(count = 25): Promise<PokemonTcgCard[]> {
   const totalCount = await getCachedTotalCount();
-  // Fetch a batch of 25 from a random page, then pick one — single API call for card data
-  const totalPages = Math.ceil(totalCount / 25);
+  const totalPages = Math.ceil(totalCount / count);
   const randomPage = Math.floor(Math.random() * totalPages) + 1;
 
   const response = await fetch(
-    `${API_BASE}/cards?page=${randomPage}&pageSize=25`,
+    `${API_BASE}/cards?page=${randomPage}&pageSize=${count}`,
     { headers: getHeaders() }
   );
   const data: ApiResponse = await response.json();
 
   if (!data.data || data.data.length === 0) {
-    throw new Error('No card returned from API');
+    throw new Error('No cards returned from API');
   }
 
-  return data.data[Math.floor(Math.random() * data.data.length)];
+  // Shuffle the results for better randomness
+  const cards = [...data.data];
+  for (let i = cards.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [cards[i], cards[j]] = [cards[j], cards[i]];
+  }
+
+  return cards.filter(c => c.images?.large);
+}
+
+export async function getRandomCard(): Promise<PokemonTcgCard> {
+  const cards = await getRandomCards(25);
+  return cards[0];
 }
 
 export async function getCardById(id: string): Promise<PokemonTcgCard> {
@@ -182,19 +193,19 @@ export async function getCardsBySet(setId: string, limit = 50): Promise<PokemonT
   return data.data || [];
 }
 
-export async function getRandomHoloCard(): Promise<PokemonTcgCard> {
+export async function getRandomHoloCards(count = 25): Promise<PokemonTcgCard[]> {
   const totalCount = await getCachedHoloCount();
 
   if (totalCount === 0) {
     throw new Error('No holo cards found');
   }
 
-  const totalPages = Math.ceil(totalCount / 25);
+  const totalPages = Math.ceil(totalCount / count);
   const randomPage = Math.floor(Math.random() * totalPages) + 1;
   const params = new URLSearchParams({
     q: HOLO_QUERY,
     page: String(randomPage),
-    pageSize: '25',
+    pageSize: String(count),
   });
 
   const response = await fetch(`${API_BASE}/cards?${params}`, {
@@ -203,8 +214,19 @@ export async function getRandomHoloCard(): Promise<PokemonTcgCard> {
   const data: ApiResponse = await response.json();
 
   if (!data.data || data.data.length === 0) {
-    throw new Error('No holo card returned from API');
+    throw new Error('No holo cards returned from API');
   }
 
-  return data.data[Math.floor(Math.random() * data.data.length)];
+  const cards = [...data.data];
+  for (let i = cards.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [cards[i], cards[j]] = [cards[j], cards[i]];
+  }
+
+  return cards.filter(c => c.images?.large);
+}
+
+export async function getRandomHoloCard(): Promise<PokemonTcgCard> {
+  const cards = await getRandomHoloCards(25);
+  return cards[0];
 }
