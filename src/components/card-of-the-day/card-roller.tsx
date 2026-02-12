@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useRef } from "react"
+import { useState, useCallback, useRef, useEffect } from "react"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Dices, Sparkles, ExternalLink, Loader2 } from "lucide-react"
@@ -97,6 +97,12 @@ export function CardRoller({
     const data = await response.json()
     return data.cards || []
   }, [])
+
+  // Prefetch both pools on mount so first roll is instant
+  useEffect(() => {
+    fetchPool(false).then((cards) => { normalPool.current = cards }).catch(() => {})
+    fetchPool(true).then((cards) => { holoPool.current = cards }).catch(() => {})
+  }, [fetchPool])
 
   const rollCard = useCallback(async (holo: boolean) => {
     const pool = holo ? holoPool : normalPool

@@ -47,7 +47,11 @@ export async function GET(request: NextRequest) {
     const rawCards = isHolo ? await getRandomHoloCards(25) : await getRandomCards(25);
     const cards = rawCards.map(formatCard);
 
-    return NextResponse.json({ cards });
+    return NextResponse.json({ cards }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+      },
+    });
   } catch (error) {
     console.error('Random card error:', error);
     return NextResponse.json({ error: 'Failed to fetch random cards' }, { status: 500 });
