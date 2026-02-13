@@ -16,6 +16,7 @@ import { GoingButton } from '@/components/shows/going-button';
 import { ReviewForm } from '@/components/shows/review-form';
 import { ReviewList } from '@/components/shows/review-list';
 import { FollowOrganizerButton } from '@/components/shows/follow-organizer-button';
+import { ShowFeed } from '@/components/shows/show-feed';
 import { db } from '@/db';
 import { vendorShowPresence, vendors } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -122,6 +123,10 @@ export default async function ShowDetailPage({
                 </div>
               </div>
             )}
+
+            <div>
+              <ShowFeed showSlug={show.slug} />
+            </div>
 
             <div id="reviews">
               <ReviewList showSlug={show.slug} />

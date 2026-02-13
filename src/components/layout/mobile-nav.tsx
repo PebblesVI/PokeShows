@@ -12,7 +12,8 @@ const navLinks = [
   { href: "/shows/near-me", label: "Near Me" },
   { href: "/card-of-the-day", label: "Card of the Day" },
   { href: "/buy", label: "Buy Cards" },
-  { href: "/buy/category/accessories", label: "Accessories" },
+  { href: "/collection", label: "Collection" },
+  { href: "/trending", label: "Trending" },
   { href: "/wishlist", label: "Wishlist" },
   { href: "/about", label: "About" },
 ] as const

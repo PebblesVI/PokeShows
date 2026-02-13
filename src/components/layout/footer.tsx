@@ -4,7 +4,11 @@ const quickLinks = [
   { href: "/shows", label: "Shows" },
   { href: "/card-of-the-day", label: "Card of the Day" },
   { href: "/buy", label: "Buy Cards" },
+  { href: "/collection", label: "My Collection" },
+  { href: "/trending", label: "Trending Cards" },
+  { href: "/sets/calendar", label: "Set Calendar" },
   { href: "/wishlist", label: "Card Wishlist" },
+  { href: "/collection/trades", label: "Trade Binder" },
   { href: "/submit", label: "Submit a Show" },
   { href: "/about", label: "About" },
 ] as const

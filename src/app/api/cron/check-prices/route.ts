@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { priceAlerts, cardPriceHistory, wishlistAlerts, cardOfTheDay } from '@/db/schema';
+import { priceAlerts, cardPriceHistory, wishlistAlerts, cardOfTheDay, collectionCards } from '@/db/schema';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { buildWishlistPriceDropEmailHtml, buildWishlistPriceDropEmailSubject } from '@/lib/email-templates/wishlist-price-drop';
+import { buildCollectionValueAlertHtml, buildCollectionValueAlertSubject } from '@/lib/email-templates/collection-value-alert';
 import { format, subDays } from 'date-fns';
 
 export const dynamic = 'force-dynamic';
@@ -208,7 +209,124 @@ export async function GET(request: NextRequest) {
       console.error('[check-prices] Wishlist alerts batch error:', err);
     }
 
-    return NextResponse.json({ success: true, total: pendingAlerts.length, sent, skipped, wishlistAlertsSent });
+    // Collection Value Alerts (weekly, Mondays only)
+    let collectionAlertsSent = 0;
+    const isMonday = new Date().getDay() === 1;
+
+    if (isMonday) {
+      try {
+        // Get all unique emails that have collection cards
+        const allCollectionCards = await db.select().from(collectionCards);
+        const emailCards: Record<string, typeof allCollectionCards> = {};
+
+        for (const card of allCollectionCards) {
+          if (!emailCards[card.email]) {
+            emailCards[card.email] = [];
+          }
+          emailCards[card.email].push(card);
+        }
+
+        const today = format(new Date(), 'yyyy-MM-dd');
+        const oneWeekAgo = format(subDays(new Date(), 7), 'yyyy-MM-dd');
+
+        for (const [email, cards] of Object.entries(emailCards)) {
+          try {
+            let totalCurrentValue = 0;
+            let totalPreviousValue = 0;
+            const cardChanges: { name: string; currentPrice: number; previousPrice: number; change: number }[] = [];
+
+            for (const card of cards) {
+              // Get current price (latest)
+              const [latestPrice] = await db.select()
+                .from(cardPriceHistory)
+                .where(eq(cardPriceHistory.pokemonTcgId, card.pokemonTcgId))
+                .orderBy(desc(cardPriceHistory.recordedDate))
+                .limit(1);
+
+              if (!latestPrice?.priceMarket && !latestPrice?.priceMid) continue;
+              const currentPrice = latestPrice.priceMarket ?? latestPrice.priceMid ?? 0;
+
+              // Get price from ~7 days ago
+              const [prevPrice] = await db.select()
+                .from(cardPriceHistory)
+                .where(and(
+                  eq(cardPriceHistory.pokemonTcgId, card.pokemonTcgId),
+                  sql`${cardPriceHistory.recordedDate} <= ${oneWeekAgo}`,
+                ))
+                .orderBy(desc(cardPriceHistory.recordedDate))
+                .limit(1);
+
+              const previousPrice = prevPrice?.priceMarket ?? prevPrice?.priceMid ?? currentPrice;
+
+              totalCurrentValue += currentPrice;
+              totalPreviousValue += previousPrice;
+
+              if (previousPrice > 0) {
+                cardChanges.push({
+                  name: card.cardName,
+                  currentPrice,
+                  previousPrice,
+                  change: currentPrice - previousPrice,
+                });
+              }
+            }
+
+            // Skip if no meaningful previous value to compare
+            if (totalPreviousValue <= 0) continue;
+
+            const changePercent = ((totalCurrentValue - totalPreviousValue) / totalPreviousValue) * 100;
+
+            // Only send if change is >= 5% (up or down)
+            if (Math.abs(changePercent) < 5) continue;
+
+            // Sort for top gainers and losers
+            const sorted = cardChanges.sort((a, b) => b.change - a.change);
+            const topGainers = sorted
+              .filter(c => c.change > 0)
+              .slice(0, 5)
+              .map(c => ({ name: c.name, change: c.change }));
+            const topLosers = sorted
+              .filter(c => c.change < 0)
+              .slice(-5)
+              .reverse()
+              .map(c => ({ name: c.name, change: c.change }));
+
+            const alertData = {
+              totalValue: totalCurrentValue,
+              previousValue: totalPreviousValue,
+              changePercent,
+              topGainers,
+              topLosers,
+            };
+
+            const html = buildCollectionValueAlertHtml(alertData);
+            const subject = buildCollectionValueAlertSubject(alertData);
+
+            const emailRes = await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${resendApiKey}`,
+              },
+              body: JSON.stringify({
+                from: 'PokeShows <reminders@pokeshows.com>',
+                to: [email],
+                subject,
+                html,
+              }),
+            });
+
+            if (emailRes.ok) collectionAlertsSent++;
+          } catch (err) {
+            console.error(`[check-prices] Collection value alert error for ${email}:`, err);
+          }
+        }
+      } catch (err) {
+        console.error('[check-prices] Collection value alerts batch error:', err);
+      }
+    }
+
+    return NextResponse.json({ success: true, total: pendingAlerts.length, sent, skipped, wishlistAlertsSent, collectionAlertsSent });
   } catch (error) {
     console.error('[check-prices] Cron failed:', error);
     return NextResponse.json({ error: 'Failed' }, { status: 500 });

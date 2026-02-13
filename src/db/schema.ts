@@ -274,3 +274,63 @@ export const sponsorRequests = sqliteTable('sponsor_requests', {
   message: text('message'),
   createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 });
+
+export const collectorProfiles = sqliteTable('collector_profiles', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  email: text('email').notNull().unique(),
+  displayName: text('display_name').notNull(),
+  slug: text('slug').notNull().unique(),
+  bio: text('bio'),
+  favoriteSet: text('favorite_set'),
+  createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+}, (table) => [
+  uniqueIndex('cp_email_idx').on(table.email),
+  uniqueIndex('cp_slug_idx').on(table.slug),
+]);
+
+export const collectionCards = sqliteTable('collection_cards', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  email: text('email').notNull(),
+  pokemonTcgId: text('pokemon_tcg_id').notNull(),
+  cardName: text('card_name').notNull(),
+  setName: text('set_name').notNull(),
+  setId: text('set_id').notNull(),
+  imageSmall: text('image_small').notNull(),
+  rarity: text('rarity'),
+  variant: text('variant'),
+  pricePaid: real('price_paid'),
+  forTrade: integer('for_trade', { mode: 'boolean' }).default(false),
+  addedAt: text('added_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+}, (table) => [
+  index('cc_email_idx').on(table.email),
+  index('cc_set_id_idx').on(table.email, table.setId),
+  uniqueIndex('cc_email_card_idx').on(table.email, table.pokemonTcgId),
+]);
+
+export const showFeedPosts = sqliteTable('show_feed_posts', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  email: text('email').notNull(),
+  displayName: text('display_name').notNull(),
+  showSlug: text('show_slug').notNull(),
+  type: text('type').notNull(), // going, bought, comment
+  text: text('text'),
+  cardName: text('card_name'),
+  pricePaid: real('price_paid'),
+  createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+}, (table) => [
+  index('sfp_show_slug_idx').on(table.showSlug),
+  index('sfp_created_idx').on(table.showSlug, table.createdAt),
+]);
+
+export const setReleaseAlerts = sqliteTable('set_release_alerts', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  email: text('email').notNull(),
+  setId: text('set_id').notNull(),
+  setName: text('set_name').notNull(),
+  releaseDate: text('release_date'),
+  sent: integer('sent', { mode: 'boolean' }).default(false),
+  createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+}, (table) => [
+  uniqueIndex('sra_email_set_idx').on(table.email, table.setId),
+  index('sra_set_idx').on(table.setId),
+]);
