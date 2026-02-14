@@ -9,6 +9,9 @@ const quickLinks = [
   { href: "/sets/calendar", label: "Set Calendar" },
   { href: "/wishlist", label: "Card Wishlist" },
   { href: "/collection/trades", label: "Trade Binder" },
+  { href: "/achievements", label: "Achievements" },
+  { href: "/leaderboards", label: "Leaderboards" },
+  { href: "/pro", label: "PokeShows Pro" },
   { href: "/submit", label: "Submit a Show" },
   { href: "/about", label: "About" },
 ] as const

@@ -1,12 +1,25 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { format } from 'date-fns';
+import Link from 'next/link';
 import { db } from '@/db';
-import { collectorProfiles, collectionCards, cardPriceHistory } from '@/db/schema';
+import { collectorProfiles, collectionCards, cardPriceHistory, collectorAchievements } from '@/db/schema';
 import { eq, desc, sql, count, countDistinct } from 'drizzle-orm';
 import { Badge } from '@/components/ui/badge';
 import { buildEbaySearchUrl } from '@/lib/ebay';
-import { Users, TrendingUp, ArrowRightLeft, Layers, Calendar, Heart, ExternalLink } from 'lucide-react';
+import { ACHIEVEMENTS } from '@/lib/achievements';
+import { Users, TrendingUp, ArrowRightLeft, Layers, Calendar, Heart, ExternalLink, Trophy, Sparkles, Library, Award, MapPin, Star, MessageSquare, Repeat, Bell, MessageCircle } from 'lucide-react';
+
+const ACHIEVEMENT_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  Sparkles, Library, Award, Trophy, Layers, MapPin, Calendar, Star, MessageSquare, ArrowRightLeft, Repeat, Bell, MessageCircle,
+};
+
+const ACHIEVEMENT_CATEGORY_COLORS: Record<string, string> = {
+  collection: 'text-blue-500',
+  shows: 'text-green-500',
+  trading: 'text-orange-500',
+  engagement: 'text-purple-500',
+};
 
 export async function generateMetadata({
   params,
@@ -252,6 +265,9 @@ export default async function CollectorProfilePage({
         </section>
       )}
 
+      {/* Recent Achievements */}
+      <RecentAchievements email={profile.email} />
+
       {/* Empty state */}
       {allCards.length === 0 && (
         <div className="text-center py-16">
@@ -260,5 +276,73 @@ export default async function CollectorProfilePage({
         </div>
       )}
     </div>
+  );
+}
+
+async function RecentAchievements({ email }: { email: string }) {
+  const recentUnlocked = await db
+    .select({
+      achievementId: collectorAchievements.achievementId,
+      unlockedAt: collectorAchievements.unlockedAt,
+    })
+    .from(collectorAchievements)
+    .where(eq(collectorAchievements.email, email))
+    .orderBy(desc(collectorAchievements.unlockedAt))
+    .limit(6);
+
+  if (recentUnlocked.length === 0) return null;
+
+  const achievementDetails = recentUnlocked
+    .map((u) => {
+      const def = ACHIEVEMENTS.find((a) => a.id === u.achievementId);
+      if (!def) return null;
+      return { ...def, unlockedAt: u.unlockedAt };
+    })
+    .filter(Boolean) as (typeof ACHIEVEMENTS[number] & { unlockedAt: string })[];
+
+  if (achievementDetails.length === 0) return null;
+
+  return (
+    <section className="mt-12">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-semibold flex items-center gap-2">
+          <Trophy className="h-5 w-5" />
+          Recent Achievements
+        </h2>
+        <Link
+          href="/achievements"
+          className="text-sm text-muted-foreground hover:text-primary transition-colors"
+        >
+          View all achievements
+        </Link>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {achievementDetails.map((achievement) => {
+          const Icon = ACHIEVEMENT_ICON_MAP[achievement.icon];
+          const colorClass = ACHIEVEMENT_CATEGORY_COLORS[achievement.category] ?? 'text-primary';
+
+          return (
+            <div
+              key={achievement.id}
+              className="flex items-center gap-3 rounded-xl border border-border p-3 hover:border-primary/30 transition-colors"
+            >
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${colorClass}`}>
+                {Icon ? <Icon className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{achievement.name}</p>
+                <p className="text-[10px] text-muted-foreground">
+                  {new Date(achievement.unlockedAt).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }

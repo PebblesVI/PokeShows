@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { buildEbaySearchUrl } from '@/lib/ebay';
+import { buildTcgPlayerSearchUrl } from '@/lib/tcgplayer-affiliate';
 import { cardToSlug } from '@/lib/card-slug';
 
 interface TrendingCard {
@@ -63,6 +64,7 @@ function GainerCard({ card }: { card: TrendingCard }) {
     searchQuery: `pokemon ${card.cardName} ${card.setName}`,
     customId: `trending-gainer-${card.pokemonTcgId}`,
   });
+  const tcgPlayerUrl = buildTcgPlayerSearchUrl(`${card.cardName} ${card.setName}`);
 
   return (
     <div className="rounded-xl border border-border p-4 transition-all duration-200 hover:border-primary/30 hover:shadow-sm">
@@ -93,14 +95,24 @@ function GainerCard({ card }: { card: TrendingCard }) {
               ${card.currentPrice.toFixed(2)}
             </div>
           </div>
-          <a
-            href={ebayUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 mt-2 text-xs font-medium text-primary hover:underline"
-          >
-            Buy Now on eBay <ExternalLink className="h-3 w-3" />
-          </a>
+          <div className="flex items-center gap-3 mt-2">
+            <a
+              href={ebayUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+            >
+              Buy Now on eBay <ExternalLink className="h-3 w-3" />
+            </a>
+            <a
+              href={tcgPlayerUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-700 rounded-full px-2.5 py-0.5 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+            >
+              TCGPlayer <ExternalLink className="h-3 w-3" />
+            </a>
+          </div>
         </div>
       </div>
     </div>
@@ -113,6 +125,7 @@ function LoserCard({ card }: { card: TrendingCard }) {
     searchQuery: `pokemon ${card.cardName} ${card.setName}`,
     customId: `trending-deal-${card.pokemonTcgId}`,
   });
+  const tcgPlayerUrl = buildTcgPlayerSearchUrl(`${card.cardName} ${card.setName}`);
 
   return (
     <div className="rounded-xl border border-border p-4 transition-all duration-200 hover:border-primary/30 hover:shadow-sm">
@@ -143,14 +156,24 @@ function LoserCard({ card }: { card: TrendingCard }) {
               ${card.currentPrice.toFixed(2)}
             </div>
           </div>
-          <a
-            href={ebayUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 mt-2 text-xs font-medium text-primary hover:underline"
-          >
-            Great Deal — Buy Now <ExternalLink className="h-3 w-3" />
-          </a>
+          <div className="flex items-center gap-3 mt-2">
+            <a
+              href={ebayUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+            >
+              Great Deal — Buy Now <ExternalLink className="h-3 w-3" />
+            </a>
+            <a
+              href={tcgPlayerUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-700 rounded-full px-2.5 py-0.5 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+            >
+              TCGPlayer <ExternalLink className="h-3 w-3" />
+            </a>
+          </div>
         </div>
       </div>
     </div>
@@ -163,6 +186,7 @@ function WishlistCard({ card }: { card: WishlistedCard }) {
     searchQuery: `pokemon ${card.cardName} ${card.setName}`,
     customId: `trending-wishlisted-${card.pokemonTcgId}`,
   });
+  const tcgPlayerUrl = buildTcgPlayerSearchUrl(`${card.cardName} ${card.setName}`);
 
   return (
     <div className="rounded-xl border border-border p-4 transition-all duration-200 hover:border-primary/30 hover:shadow-sm">
@@ -188,14 +212,24 @@ function WishlistCard({ card }: { card: WishlistedCard }) {
           {card.currentPrice !== null && (
             <p className="text-sm font-bold mt-2">${card.currentPrice.toFixed(2)}</p>
           )}
-          <a
-            href={ebayUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 mt-2 text-xs font-medium text-primary hover:underline"
-          >
-            Buy Now on eBay <ExternalLink className="h-3 w-3" />
-          </a>
+          <div className="flex items-center gap-3 mt-2">
+            <a
+              href={ebayUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+            >
+              Buy Now on eBay <ExternalLink className="h-3 w-3" />
+            </a>
+            <a
+              href={tcgPlayerUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-700 rounded-full px-2.5 py-0.5 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+            >
+              TCGPlayer <ExternalLink className="h-3 w-3" />
+            </a>
+          </div>
         </div>
       </div>
     </div>

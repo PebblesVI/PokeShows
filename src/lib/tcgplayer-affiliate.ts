@@ -8,3 +8,16 @@ export function buildTcgPlayerAffiliateUrl(tcgPlayerUrl: string): string {
 
   return url.toString();
 }
+
+export function buildTcgPlayerSearchUrl(cardName: string): string {
+  const affiliateId = process.env.TCGPLAYER_AFFILIATE_ID || 'pokeshows';
+
+  const params = new URLSearchParams({
+    q: cardName,
+    utm_campaign: 'affiliate',
+    utm_medium: affiliateId,
+    utm_source: 'pokeshows',
+  });
+
+  return `https://www.tcgplayer.com/search/pokemon/product?${params.toString()}`;
+}

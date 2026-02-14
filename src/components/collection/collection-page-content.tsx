@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { buildEbaySearchUrl } from '@/lib/ebay';
+import { buildTcgPlayerSearchUrl } from '@/lib/tcgplayer-affiliate';
 import {
   Search,
   Plus,
@@ -458,6 +459,7 @@ export function CollectionPageContent() {
                 searchQuery: `pokemon ${card.cardName} ${card.setName}`,
                 customId: 'collection-sell',
               });
+              const tcgPlayerUrl = buildTcgPlayerSearchUrl(`${card.cardName} ${card.setName}`);
 
               return (
                 <div
@@ -508,6 +510,18 @@ export function CollectionPageContent() {
                       title="Find on eBay"
                     >
                       <Button variant="outline" size="icon-xs" asChild>
+                        <span>
+                          <ExternalLink className="h-3 w-3" />
+                        </span>
+                      </Button>
+                    </a>
+                    <a
+                      href={tcgPlayerUrl}
+                      target="_blank"
+                      rel="noopener noreferrer nofollow"
+                      title="Find on TCGPlayer"
+                    >
+                      <Button variant="outline" size="icon-xs" asChild className="border-blue-300 text-blue-600 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-900/20">
                         <span>
                           <ExternalLink className="h-3 w-3" />
                         </span>

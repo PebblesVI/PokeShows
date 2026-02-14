@@ -71,6 +71,13 @@
       "when": 1771004574171,
       "tag": "0009_brown_micromacro",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1771049941581,
+      "tag": "0010_hard_millenium_guard",
+      "breakpoints": true
     }
   ]
 }

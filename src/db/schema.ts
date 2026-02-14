@@ -322,6 +322,60 @@ export const showFeedPosts = sqliteTable('show_feed_posts', {
   index('sfp_created_idx').on(table.showSlug, table.createdAt),
 ]);
 
+export const payments = sqliteTable('payments', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  email: text('email').notNull(),
+  stripeSessionId: text('stripe_session_id').unique(),
+  stripePaymentIntentId: text('stripe_payment_intent_id'),
+  amount: integer('amount').notNull(), // cents
+  currency: text('currency').default('usd').notNull(),
+  type: text('type').notNull(), // vendor_featured, cotd_sponsorship, show_promotion
+  metadata: text('metadata'), // JSON — showSlug, vendorId, sponsorDate, etc.
+  status: text('status').default('pending').notNull(), // pending, completed, failed
+  createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+}, (table) => [
+  index('payments_email_idx').on(table.email),
+  index('payments_type_idx').on(table.type),
+  index('payments_status_idx').on(table.status),
+]);
+
+export const proSubscriptions = sqliteTable('pro_subscriptions', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  email: text('email').notNull().unique(),
+  stripeCustomerId: text('stripe_customer_id'),
+  stripeSubscriptionId: text('stripe_subscription_id'),
+  status: text('status').default('active').notNull(), // active, canceled, past_due
+  plan: text('plan').default('monthly').notNull(),
+  currentPeriodEnd: text('current_period_end'),
+  createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+}, (table) => [
+  uniqueIndex('pro_email_idx').on(table.email),
+]);
+
+export const affiliateClicks = sqliteTable('affiliate_clicks', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  cardName: text('card_name'),
+  cardId: text('card_id'),
+  destination: text('destination').notNull(), // ebay, tcgplayer
+  sourcePage: text('source_page').notNull(),
+  customId: text('custom_id'),
+  clickedAt: text('clicked_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+}, (table) => [
+  index('ac_destination_idx').on(table.destination),
+  index('ac_source_idx').on(table.sourcePage),
+  index('ac_clicked_at_idx').on(table.clickedAt),
+]);
+
+export const collectorAchievements = sqliteTable('collector_achievements', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  email: text('email').notNull(),
+  achievementId: text('achievement_id').notNull(),
+  unlockedAt: text('unlocked_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+}, (table) => [
+  uniqueIndex('ca_email_achievement_idx').on(table.email, table.achievementId),
+  index('ca_email_idx').on(table.email),
+]);
+
 export const setReleaseAlerts = sqliteTable('set_release_alerts', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   email: text('email').notNull(),

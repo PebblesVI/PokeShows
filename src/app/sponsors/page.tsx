@@ -1,6 +1,8 @@
 import { Metadata } from 'next';
 import { Megaphone, Star, TrendingUp, Users, Mail } from 'lucide-react';
 import { SponsorContactForm } from '@/components/sponsors/sponsor-contact-form';
+import { CheckoutButton } from '@/components/checkout/checkout-button';
+import { SponsorBookButton } from '@/components/sponsors/sponsor-book-button';
 
 export const metadata: Metadata = {
   title: 'Partner with PokeShows — Reach Pokemon Card Collectors',
@@ -11,6 +13,8 @@ const SPONSOR_OPTIONS = [
   {
     title: 'Card of the Day Spotlight',
     price: '$15–50/day',
+    checkoutType: 'cotd_sponsorship' as const,
+    checkoutLabel: 'Sponsor a Day — $25',
     icon: <Star className="h-6 w-6 text-yellow-500" />,
     benefits: [
       'Pick a card to feature alongside the daily spotlight',
@@ -22,6 +26,8 @@ const SPONSOR_OPTIONS = [
   {
     title: 'Featured Vendor Listing',
     price: '$10–25/month',
+    checkoutType: 'vendor_featured_monthly' as const,
+    checkoutLabel: 'Get Featured — $10/mo',
     icon: <TrendingUp className="h-6 w-6 text-green-500" />,
     benefits: [
       'Stand out in the vendor directory with a featured badge',
@@ -33,6 +39,8 @@ const SPONSOR_OPTIONS = [
   {
     title: 'Pre-Show Shoutout',
     price: '$5/show',
+    checkoutType: 'show_promotion' as const,
+    checkoutLabel: 'Promote a Show — $5',
     icon: <Mail className="h-6 w-6 text-blue-500" />,
     benefits: [
       'Your shop featured in show prep emails',
@@ -83,7 +91,7 @@ export default function SponsorsPage() {
                 </div>
               </div>
             </div>
-            <ul className="space-y-2">
+            <ul className="space-y-2 mb-4">
               {option.benefits.map(benefit => (
                 <li key={benefit} className="flex items-start gap-2 text-sm text-muted-foreground">
                   <span className="text-green-500 mt-0.5 shrink-0">&#10003;</span>
@@ -91,6 +99,16 @@ export default function SponsorsPage() {
                 </li>
               ))}
             </ul>
+            <div className="flex flex-wrap items-center gap-3">
+              <CheckoutButton
+                type={option.checkoutType}
+                label={option.checkoutLabel}
+              />
+              <SponsorBookButton
+                type={option.checkoutType}
+                label="Book Now"
+              />
+            </div>
           </div>
         ))}
       </div>

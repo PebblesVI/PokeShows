@@ -2,6 +2,8 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { Star, Check, Users, Mail, MapPin, TrendingUp } from 'lucide-react';
 import { SponsorContactForm } from '@/components/sponsors/sponsor-contact-form';
+import { CheckoutButton } from '@/components/checkout/checkout-button';
+import { VendorPayButton } from '@/components/vendors/vendor-pay-button';
 
 export const metadata: Metadata = {
   title: 'Get Featured — Stand Out on PokeShows',
@@ -99,7 +101,7 @@ export default function FeaturedVendorsPage() {
                 <span className="text-3xl font-bold">{plan.price}</span>
                 <span className="text-muted-foreground text-sm">{plan.period}</span>
               </div>
-              <ul className="space-y-2">
+              <ul className="space-y-2 mb-4">
                 {plan.features.map(feature => (
                   <li key={feature} className="flex items-start gap-2 text-sm">
                     <Check className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
@@ -107,12 +109,40 @@ export default function FeaturedVendorsPage() {
                   </li>
                 ))}
               </ul>
+              <CheckoutButton
+                type={plan.name === 'Monthly' ? 'vendor_featured_monthly' : 'vendor_featured_show'}
+                label={plan.name === 'Monthly' ? 'Subscribe — $10/mo' : 'Pay Now — $5'}
+                className="w-full"
+              />
             </div>
           ))}
         </div>
         <p className="text-center text-xs text-muted-foreground mt-4">
-          No contracts. Pay via PayPal or Venmo. We activate your listing within 24 hours.
+          No contracts. Cancel anytime. Secure payments via Stripe.
         </p>
+      </section>
+
+      {/* Pay Now */}
+      <section className="mb-12">
+        <h2 className="text-xl font-semibold mb-6 text-center">Pay Now</h2>
+        <div className="grid gap-6 sm:grid-cols-2 max-w-xl mx-auto">
+          <div className="rounded-xl border border-border p-6 text-center">
+            <h3 className="font-semibold text-lg mb-2">Subscribe Monthly</h3>
+            <p className="text-sm text-muted-foreground mb-4">$10/month &mdash; cancel anytime</p>
+            <VendorPayButton
+              type="vendor_featured_monthly"
+              label="Subscribe Monthly — $10/month"
+            />
+          </div>
+          <div className="rounded-xl border border-border p-6 text-center">
+            <h3 className="font-semibold text-lg mb-2">Pay Per Show</h3>
+            <p className="text-sm text-muted-foreground mb-4">$5 one-time per show</p>
+            <VendorPayButton
+              type="vendor_featured_show"
+              label="Pay Per Show — $5"
+            />
+          </div>
+        </div>
       </section>
 
       {/* How It Works */}

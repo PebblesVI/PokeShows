@@ -1,85 +1,62 @@
 import { Metadata } from 'next';
-import { ExternalLink, Tag, Star, Sparkles } from 'lucide-react';
+import { ExternalLink, Tag, Star, Sparkles, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { buildEbaySearchUrl } from '@/lib/ebay';
+import { buildTcgPlayerSearchUrl } from '@/lib/tcgplayer-affiliate';
 import Link from 'next/link';
+import { DynamicDeals } from './dynamic-deals';
 
 export const metadata: Metadata = {
   title: 'Partner Deals — Pokemon Card Discounts & Offers',
   description: 'Exclusive deals from our partners on Pokemon cards, supplies, grading services, and more. Curated offers for the PokeShows community.',
 };
 
-// Each deal is a partner referral link. Add new deals here as partnerships are established.
-const DEALS: {
+// 4 evergreen supply deals
+const EVERGREEN_DEALS: {
   title: string;
   partner: string;
   description: string;
-  url: string;
+  ebayUrl: string;
+  tcgPlayerUrl: string;
   badge?: string;
   category: string;
 }[] = [
   {
-    title: '10% Off Card Sleeves & Top Loaders',
-    partner: 'eBay',
-    description: 'Stock up on penny sleeves, top loaders, and magnetic holders. Great prices on bulk card protection supplies.',
-    url: buildEbaySearchUrl({ searchQuery: 'pokemon card sleeves top loaders bulk', customId: 'deals-supplies' }),
+    title: 'Card Sleeves & Penny Sleeves',
+    partner: 'eBay + TCGPlayer',
+    description: 'Stock up on penny sleeves to protect your cards. Essential for any collector building a show haul.',
+    ebayUrl: buildEbaySearchUrl({ searchQuery: 'pokemon card penny sleeves bulk', customId: 'deals-sleeves' }),
+    tcgPlayerUrl: buildTcgPlayerSearchUrl('pokemon card sleeves'),
+    badge: 'Essential',
+    category: 'Supplies',
+  },
+  {
+    title: 'Ultra Pro Top Loaders (35pt)',
+    partner: 'eBay + TCGPlayer',
+    description: 'Rigid top loaders for your valuable pulls. 35pt is the standard for most Pokemon cards.',
+    ebayUrl: buildEbaySearchUrl({ searchQuery: 'ultra pro top loaders 35pt', customId: 'deals-toploaders' }),
+    tcgPlayerUrl: buildTcgPlayerSearchUrl('ultra pro top loaders 35pt'),
     badge: 'Popular',
     category: 'Supplies',
   },
   {
-    title: 'PSA Graded Cards Under $50',
-    partner: 'eBay',
-    description: 'Find affordable PSA graded Pokemon cards. Build your graded collection without breaking the bank.',
-    url: buildEbaySearchUrl({ searchQuery: 'PSA graded pokemon card', customId: 'deals-graded' }),
-    category: 'Graded Cards',
-  },
-  {
-    title: 'Sealed Booster Boxes at Market Price',
-    partner: 'eBay',
-    description: 'Latest Pokemon TCG booster boxes from trusted sellers. Perfect for ripping at your next show.',
-    url: buildEbaySearchUrl({ searchQuery: 'pokemon booster box sealed latest', customId: 'deals-sealed' }),
-    badge: 'Hot',
-    category: 'Sealed Product',
-  },
-  {
-    title: 'PSA Slab Storage Cases',
-    partner: 'eBay',
-    description: 'Protect your graded cards with dedicated PSA slab cases. Multiple sizes available for any collection.',
-    url: buildEbaySearchUrl({ searchQuery: 'PSA graded card storage case holder', customId: 'deals-psacase' }),
+    title: 'PSA Graded Card Storage Cases',
+    partner: 'eBay + TCGPlayer',
+    description: 'Keep your graded slabs organized and protected with dedicated PSA storage cases.',
+    ebayUrl: buildEbaySearchUrl({ searchQuery: 'PSA graded card storage case holder', customId: 'deals-psacase' }),
+    tcgPlayerUrl: buildTcgPlayerSearchUrl('PSA graded card storage case'),
     category: 'Supplies',
-  },
-  {
-    title: 'Japanese Pokemon Cards',
-    partner: 'eBay',
-    description: 'Explore Japanese Pokemon cards with exclusive art and sets not available in English. Great collectibles and investment pieces.',
-    url: buildEbaySearchUrl({ searchQuery: 'pokemon card japanese booster', customId: 'deals-japanese' }),
-    category: 'Cards',
-  },
-  {
-    title: 'Elite Trainer Boxes',
-    partner: 'eBay',
-    description: 'The best value in Pokemon TCG — ETBs come with packs, sleeves, dice, and a storage box all in one.',
-    url: buildEbaySearchUrl({ searchQuery: 'pokemon elite trainer box sealed', customId: 'deals-etb' }),
-    category: 'Sealed Product',
   },
   {
     title: 'Magnetic One-Touch Card Holders',
-    partner: 'eBay',
-    description: 'Premium magnetic holders for your most valuable cards. UV protection and crystal-clear display.',
-    url: buildEbaySearchUrl({ searchQuery: 'ultra pro one touch magnetic holder 35pt', customId: 'deals-magnetic' }),
+    partner: 'eBay + TCGPlayer',
+    description: 'Premium magnetic holders with UV protection. Perfect for displaying your most valuable cards.',
+    ebayUrl: buildEbaySearchUrl({ searchQuery: 'ultra pro one touch magnetic holder 35pt', customId: 'deals-magnetic' }),
+    tcgPlayerUrl: buildTcgPlayerSearchUrl('magnetic one touch card holder'),
+    badge: 'Premium',
     category: 'Supplies',
   },
-  {
-    title: 'Vintage Base Set Cards',
-    partner: 'eBay',
-    description: 'Original Base Set Pokemon cards — Charizard, Blastoise, Venusaur, and more from where it all started.',
-    url: buildEbaySearchUrl({ searchQuery: 'pokemon base set card original', customId: 'deals-vintage' }),
-    badge: 'Classic',
-    category: 'Cards',
-  },
 ];
-
-const CATEGORIES = [...new Set(DEALS.map(d => d.category))];
 
 export default function DealsPage() {
   return (
@@ -87,59 +64,70 @@ export default function DealsPage() {
       <div className="mb-10">
         <div className="flex items-center gap-2 mb-2">
           <Tag className="h-6 w-6 text-primary" />
-          <h1 className="text-3xl font-bold">Partner Deals</h1>
+          <h1 className="text-3xl font-bold">Smart Deals</h1>
         </div>
         <p className="text-muted-foreground">
-          Curated deals and offers from our partners. Every link supports PokeShows while getting you great prices on cards, supplies, and more.
+          Live price drops, trending steals, and curated supply deals. Every link supports PokeShows while getting you the best prices.
         </p>
       </div>
 
-      {/* Category Nav */}
-      <div className="flex flex-wrap gap-2 mb-8">
-        {CATEGORIES.map(cat => (
-          <span
-            key={cat}
-            className="px-3 py-1 text-xs font-medium rounded-full border border-border bg-muted/30"
-          >
-            {cat}
-          </span>
-        ))}
-      </div>
+      {/* Dynamic Deals Section: Price Drops + Trending Steals */}
+      <DynamicDeals />
 
-      {/* Deals Grid */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        {DEALS.map((deal) => (
-          <a
-            key={deal.title}
-            href={deal.url}
-            target="_blank"
-            rel="noopener noreferrer nofollow"
-            className="group rounded-xl border border-border p-5 hover:border-primary/30 hover:shadow-sm transition-all duration-200"
-          >
-            <div className="flex items-start justify-between gap-2 mb-2">
-              <h2 className="font-semibold text-sm group-hover:text-primary transition-colors leading-tight">
-                {deal.title}
-              </h2>
-              {deal.badge && (
-                <Badge variant="secondary" className="text-[10px] shrink-0 rounded-full">
-                  {deal.badge === 'Hot' && <Sparkles className="h-2.5 w-2.5 mr-0.5" />}
-                  {deal.badge === 'Popular' && <Star className="h-2.5 w-2.5 mr-0.5" />}
-                  {deal.badge}
-                </Badge>
-              )}
+      {/* Evergreen Supply Deals */}
+      <section className="mt-12">
+        <div className="flex items-center gap-2 mb-6">
+          <Sparkles className="h-5 w-5 text-primary" />
+          <h2 className="text-xl font-semibold">Card Supplies</h2>
+        </div>
+        <p className="text-sm text-muted-foreground mb-6">
+          Protect your collection with quality supplies. Available on both eBay and TCGPlayer.
+        </p>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          {EVERGREEN_DEALS.map((deal) => (
+            <div
+              key={deal.title}
+              className="rounded-xl border border-border p-5 hover:border-primary/30 hover:shadow-sm transition-all duration-200"
+            >
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <h3 className="font-semibold text-sm leading-tight">
+                  {deal.title}
+                </h3>
+                {deal.badge && (
+                  <Badge variant="secondary" className="text-[10px] shrink-0 rounded-full">
+                    {deal.badge === 'Popular' && <Star className="h-2.5 w-2.5 mr-0.5" />}
+                    {deal.badge === 'Essential' && <Zap className="h-2.5 w-2.5 mr-0.5" />}
+                    {deal.badge === 'Premium' && <Sparkles className="h-2.5 w-2.5 mr-0.5" />}
+                    {deal.badge}
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
+                {deal.description}
+              </p>
+              <div className="flex items-center gap-2">
+                <a
+                  href={deal.ebayUrl}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-primary text-primary-foreground rounded-full hover:opacity-90 transition-opacity"
+                >
+                  eBay <ExternalLink className="h-3 w-3" />
+                </a>
+                <a
+                  href={deal.tcgPlayerUrl}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium border border-blue-300 text-blue-600 dark:border-blue-700 dark:text-blue-400 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                >
+                  TCGPlayer <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
-              {deal.description}
-            </p>
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] text-muted-foreground">via {deal.partner}</span>
-              <span className="inline-flex items-center gap-1 text-xs text-primary font-medium">
-                Shop Now <ExternalLink className="h-3 w-3" />
-              </span>
-            </div>
-          </a>
-        ))}
-      </div>
+          ))}
+        </div>
+      </section>
 
       {/* Partner CTA */}
       <div className="mt-12 rounded-xl border border-border bg-muted/30 p-6 text-center">

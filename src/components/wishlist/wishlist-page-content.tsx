@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { ExternalLink, Trash2, Share2, Check, ShoppingBag, Bell } from 'lucide-react';
 import { useWishlist } from './wishlist-provider';
 import { buildEbaySearchUrl } from '@/lib/ebay';
+import { buildTcgPlayerSearchUrl } from '@/lib/tcgplayer-affiliate';
 import { cardToSlug } from '@/lib/card-slug';
 import { Button } from '@/components/ui/button';
 
@@ -138,6 +139,7 @@ export function WishlistPageContent() {
             searchQuery: `pokemon ${card.name} ${card.setName}`,
             customId: `wishlist-${cardToSlug(card.name, card.setName)}`,
           });
+          const tcgPlayerUrl = buildTcgPlayerSearchUrl(`${card.name} ${card.setName}`);
           const compareUrl = `/buy/${cardToSlug(card.name, card.setName)}`;
 
           return (
@@ -178,6 +180,14 @@ export function WishlistPageContent() {
                   className="inline-flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-medium bg-primary text-primary-foreground rounded-full hover:opacity-90 transition-opacity"
                 >
                   Buy on eBay <ExternalLink className="h-3 w-3" />
+                </a>
+                <a
+                  href={tcgPlayerUrl}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="inline-flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-medium border border-blue-300 text-blue-600 dark:border-blue-700 dark:text-blue-400 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                >
+                  TCGPlayer <ExternalLink className="h-3 w-3" />
                 </a>
                 <Link
                   href={compareUrl}

@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { Search, Loader2, ExternalLink, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { buildEbaySearchUrl } from '@/lib/ebay';
+import { buildTcgPlayerSearchUrl } from '@/lib/tcgplayer-affiliate';
 
 interface CardResult {
   id: string;
@@ -156,6 +157,7 @@ export function ShowScanner() {
               searchQuery: `pokemon ${card.name} ${card.setName}`,
               customId: 'scanner',
             });
+            const tcgPlayerUrl = buildTcgPlayerSearchUrl(`${card.name} ${card.setName}`);
             const displayPrice = card.priceMarket ?? card.priceMid;
 
             return (
@@ -203,6 +205,14 @@ export function ShowScanner() {
                     className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium border border-border rounded-lg hover:border-primary/30 transition-colors"
                   >
                     eBay <ExternalLink className="h-3 w-3" />
+                  </a>
+                  <a
+                    href={tcgPlayerUrl}
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium border border-blue-300 text-blue-600 dark:border-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                  >
+                    TCGPlayer <ExternalLink className="h-3 w-3" />
                   </a>
                 </div>
               </div>
