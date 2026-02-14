@@ -14,6 +14,7 @@ const navLinks = [
   { href: "/buy", label: "Buy Cards" },
   { href: "/trending", label: "Trending" },
   { href: "/wishlist", label: "Wishlist" },
+  { href: "/buy/essentials", label: "Essentials" },
   { href: "/about", label: "About" },
 ] as const
 

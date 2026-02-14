@@ -8,7 +8,7 @@ const navLinks = [
   { href: "/buy", label: "Buy Cards" },
   { href: "/trending", label: "Trending" },
   { href: "/wishlist", label: "Wishlist" },
-  { href: "/blog", label: "Blog" },
+  { href: "/buy/essentials", label: "Essentials" },
 ] as const
 
 export function Header() {

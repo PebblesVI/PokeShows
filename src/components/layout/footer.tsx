@@ -8,6 +8,8 @@ const quickLinks = [
   { href: "/sets/calendar", label: "Set Calendar" },
   { href: "/wishlist", label: "Card Wishlist" },
   { href: "/deals", label: "Deals" },
+  { href: "/buy/essentials", label: "Show Day Essentials" },
+  { href: "/blog", label: "Blog" },
   { href: "/submit", label: "Submit a Show" },
   { href: "/about", label: "About" },
 ] as const
