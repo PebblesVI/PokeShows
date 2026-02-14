@@ -6,6 +6,12 @@ import type { Show } from '@/types/show';
 import { BookmarkButton } from '@/components/favorites/bookmark-button';
 import { CompareButton } from '@/components/shows/compare-button';
 
+const SPORTS_ONLY_KEYWORDS = /\b(baseball|football|basketball|hockey|soccer|nfl|nba|mlb|nhl|mls)\b/i;
+
+function isSportsOnly(name: string): boolean {
+  return SPORTS_ONLY_KEYWORDS.test(name) && !/\b(pokemon|pok[eé]mon|tcg|trading card)\b/i.test(name);
+}
+
 export function ShowCard({ show }: { show: Show }) {
   const startDate = new Date(show.startDate);
   const dateStr = format(startDate, 'MMM d, yyyy');
@@ -20,7 +26,7 @@ export function ShowCard({ show }: { show: Show }) {
             {show.isFeatured && (
               <Badge className="bg-yellow-400 text-yellow-900 rounded-full text-xs">Featured</Badge>
             )}
-            {show.isPokemonSpecific && (
+            {!isSportsOnly(show.name) && (
               <Badge variant="default" className="rounded-full text-xs">Pokemon</Badge>
             )}
             <CompareButton slug={show.slug} />

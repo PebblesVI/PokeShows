@@ -35,8 +35,8 @@ const TYPE_CONFIG: Record<string, { title: string; message: string; link: string
   pro_monthly: {
     title: 'Welcome to PokeShows Pro!',
     message: 'You now have access to unlimited price alerts, 90-day price charts, the Pro badge, and all premium features.',
-    link: '/pro',
-    linkLabel: 'Explore Pro Features',
+    link: '/',
+    linkLabel: 'Back to Home',
   },
 };
 

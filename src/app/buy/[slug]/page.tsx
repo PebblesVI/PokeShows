@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ExternalLink, ArrowLeft } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ListingGrid } from '@/components/buy/listing-grid';
+import { BuySearch } from '@/components/buy/buy-search';
 import { getFreshCardListings } from '@/lib/listing-refresh';
 import { slugToSearchQuery, cardToSlug } from '@/lib/card-slug';
 import { buildEbaySearchUrl } from '@/lib/ebay';
@@ -117,6 +118,10 @@ export default async function CardBuyPage({
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Back to Buy
         </Link>
+
+        <div className="mb-8">
+          <BuySearch />
+        </div>
 
         <div className="flex flex-col md:flex-row gap-10 items-start mb-12">
           {/* Card preview */}

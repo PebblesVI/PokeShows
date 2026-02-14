@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, Award, ShoppingBag, Gem, Sparkles, ExternalLink } from 'lucide-react';
+import { BuySearch } from '@/components/buy/buy-search';
 import { buildEbaySearchUrl } from '@/lib/ebay';
 
 export const metadata: Metadata = {
@@ -71,6 +72,10 @@ export default function EssentialsPage() {
       >
         <ArrowLeft className="h-3.5 w-3.5" /> Back to Buy
       </Link>
+
+      <div className="mb-8">
+        <BuySearch />
+      </div>
 
       <h1 className="text-3xl font-bold mb-2">Show Day Essentials</h1>
       <p className="text-muted-foreground mb-10">

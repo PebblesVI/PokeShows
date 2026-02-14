@@ -26,10 +26,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: 'Card already selected for today', card: existing.cardName });
   }
 
+  // Get previously featured card IDs to avoid repeats
+  const previousCards = await db.select({ pokemonTcgId: cardOfTheDay.pokemonTcgId })
+    .from(cardOfTheDay)
+    .orderBy(desc(cardOfTheDay.featuredDate))
+    .limit(200);
+  const previousIds = new Set(previousCards.map(c => c.pokemonTcgId));
+
   let card = null;
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 10; i++) {
     const candidate = await getRandomCard();
-    if (candidate.images?.large) {
+    if (candidate.images?.large && !previousIds.has(candidate.id)) {
       card = candidate;
       break;
     }

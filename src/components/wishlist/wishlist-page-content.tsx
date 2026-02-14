@@ -4,18 +4,21 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Trash2, Share2, Check, ShoppingBag, Bell } from 'lucide-react';
+import { ExternalLink, X, Share2, Check, ShoppingBag, Bell, Search } from 'lucide-react';
 import { useWishlist } from './wishlist-provider';
 import { buildEbaySearchUrl } from '@/lib/ebay';
 import { buildTcgPlayerSearchUrl } from '@/lib/tcgplayer-affiliate';
 import { cardToSlug } from '@/lib/card-slug';
 import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
 
 export function WishlistPageContent() {
   const { wishlist, removeCard } = useWishlist();
   const [copied, setCopied] = useState(false);
   const [alertEmail, setAlertEmail] = useState('');
   const [alertStatus, setAlertStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [searchQuery, setSearchQuery] = useState('');
+  const router = useRouter();
 
   const handleShare = async () => {
     const ids = wishlist.map(c => c.cardId).join(',');
@@ -61,6 +64,25 @@ export function WishlistPageContent() {
 
   return (
     <div>
+      {/* Search bar */}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          const trimmed = searchQuery.trim();
+          if (trimmed) router.push(`/buy/search?q=${encodeURIComponent(trimmed)}`);
+        }}
+        className="relative max-w-xl mb-8"
+      >
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search for cards to add to your wishlist..."
+          className="w-full rounded-full border border-border bg-background pl-11 pr-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all duration-200"
+        />
+      </form>
+
       {/* Actions bar */}
       <div className="flex flex-wrap items-center gap-3 mb-8">
         <button
@@ -147,10 +169,10 @@ export function WishlistPageContent() {
               {/* Remove button */}
               <button
                 onClick={() => removeCard(card.cardId)}
-                className="absolute top-2 right-2 p-1.5 rounded-full bg-background/80 border border-border opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 z-10"
+                className="absolute top-1.5 right-1.5 p-1 rounded-full bg-background/90 border border-border hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-colors z-10"
                 aria-label="Remove from wishlist"
               >
-                <Trash2 className="h-3.5 w-3.5" />
+                <X className="h-3.5 w-3.5" />
               </button>
 
               {/* Card image */}

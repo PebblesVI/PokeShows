@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { ListingGrid } from '@/components/buy/listing-grid';
+import { BuySearch } from '@/components/buy/buy-search';
 import { getFreshCategoryListings } from '@/lib/listing-refresh';
 import { SHOP_CATEGORIES } from '@/lib/constants';
 import { buildEbaySearchUrl } from '@/lib/ebay';
@@ -56,6 +57,10 @@ export default async function CategoryBuyPage({
       >
         <ArrowLeft className="h-3.5 w-3.5" /> Back to Buy
       </Link>
+
+      <div className="mb-8">
+        <BuySearch />
+      </div>
 
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
         <div>

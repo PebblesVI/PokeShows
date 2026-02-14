@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { getSetById, getCardsBySet } from '@/lib/pokemon-tcg';
+import { BuySearch } from '@/components/buy/buy-search';
 import { cardToSlug } from '@/lib/card-slug';
 import { buildEbaySearchUrl } from '@/lib/ebay';
 
@@ -65,6 +66,10 @@ export default async function SetDetailPage({
       >
         <ArrowLeft className="h-3.5 w-3.5" /> All Sets
       </Link>
+
+      <div className="mb-8">
+        <BuySearch />
+      </div>
 
       {/* Set Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 mb-10">
