@@ -4,6 +4,29 @@ import { BaseScraper, scrapedShowSchema, type ScrapedShow } from './base-scraper
 
 const COLLECTACON_URL = 'https://collectaconusa.com/';
 
+/**
+ * Known Collect-A-Con city pages with their state codes.
+ * These are discovered from the sitemap and search results.
+ * The scraper visits each city page to extract event details.
+ */
+const CITY_PAGES: Array<{ slug: string; city: string; state: string }> = [
+  { slug: 'atlanta', city: 'Atlanta', state: 'GA' },
+  { slug: 'orlando', city: 'Orlando', state: 'FL' },
+  { slug: 'losangeles', city: 'Los Angeles', state: 'CA' },
+  { slug: 'richmond', city: 'Richmond', state: 'VA' },
+  { slug: 'kansas-city', city: 'Kansas City', state: 'MO' },
+  { slug: 'miami', city: 'Fort Lauderdale', state: 'FL' },
+  { slug: 'chicago', city: 'Chicago', state: 'IL' },
+  { slug: 'houston', city: 'Houston', state: 'TX' },
+  { slug: 'houston2', city: 'Houston', state: 'TX' },
+  { slug: 'dallas', city: 'Dallas', state: 'TX' },
+  { slug: 'san-antonio', city: 'San Antonio', state: 'TX' },
+  { slug: 'edison', city: 'Edison', state: 'NJ' },
+  { slug: 'cleveland', city: 'Cleveland', state: 'OH' },
+  { slug: 'fort-worth', city: 'Fort Worth', state: 'TX' },
+  { slug: 'losangeles2', city: 'Los Angeles', state: 'CA' },
+];
+
 export class CollectaConScraper extends BaseScraper {
   readonly sourceName = 'collectacon';
 
@@ -66,200 +89,240 @@ export class CollectaConScraper extends BaseScraper {
   }
 
   /**
-   * Extracts city and state from a location string like "Houston, TX" or "Orlando, Florida".
+   * Parse event details from a rendered city page's text content.
+   * Collect-A-Con city pages typically contain the date, venue, and location
+   * in the rendered DOM even though they're loaded via JS.
    */
-  private parseLocation(locationStr: string): { city: string; state: string } | null {
-    const stateAbbrMatch = locationStr.match(/([^,]+),\s*([A-Z]{2})\b/);
-    if (stateAbbrMatch) {
-      return {
-        city: stateAbbrMatch[1].trim(),
-        state: stateAbbrMatch[2],
-      };
-    }
+  private parseRenderedPage(
+    html: string,
+    cityInfo: { slug: string; city: string; state: string },
+  ): ScrapedShow | null {
+    const $ = cheerio.load(html);
+    const bodyText = $('body').text();
 
-    // Try full state name mapping
-    const fullStateMatch = locationStr.match(/([^,]+),\s*([A-Za-z\s]+)/);
-    if (fullStateMatch) {
-      const stateMap: Record<string, string> = {
-        'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR',
-        'california': 'CA', 'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE',
-        'florida': 'FL', 'georgia': 'GA', 'hawaii': 'HI', 'idaho': 'ID',
-        'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA', 'kansas': 'KS',
-        'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
-        'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN',
-        'mississippi': 'MS', 'missouri': 'MO', 'montana': 'MT', 'nebraska': 'NE',
-        'nevada': 'NV', 'new hampshire': 'NH', 'new jersey': 'NJ',
-        'new mexico': 'NM', 'new york': 'NY', 'north carolina': 'NC',
-        'north dakota': 'ND', 'ohio': 'OH', 'oklahoma': 'OK', 'oregon': 'OR',
-        'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
-        'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT',
-        'vermont': 'VT', 'virginia': 'VA', 'washington': 'WA',
-        'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY',
-      };
+    // Look for dates anywhere in the page
+    const datePatterns = [
+      // "February 7-8, 2026" or "February 7 - 8, 2026"
+      /([A-Za-z]+)\s+(\d{1,2})\s*[-–]\s*(\d{1,2}),?\s*(\d{4})/,
+      // "February 7, 2026"
+      /([A-Za-z]+)\s+(\d{1,2}),?\s*(\d{4})/,
+    ];
 
-      const stateAbbr = stateMap[fullStateMatch[2].trim().toLowerCase()];
-      if (stateAbbr) {
-        return {
-          city: fullStateMatch[1].trim(),
-          state: stateAbbr,
-        };
+    let parsedDates: { startDate: string; endDate?: string } | null = null;
+
+    for (const pattern of datePatterns) {
+      const match = bodyText.match(pattern);
+      if (match) {
+        parsedDates = this.parseDateRange(match[0]);
+        if (parsedDates) break;
       }
     }
 
+    if (!parsedDates) {
+      // Try to find dates in meta tags
+      const ogDescription = $('meta[property="og:description"]').attr('content') || '';
+      const metaDescription = $('meta[name="description"]').attr('content') || '';
+      const metaText = ogDescription + ' ' + metaDescription;
+
+      for (const pattern of datePatterns) {
+        const match = metaText.match(pattern);
+        if (match) {
+          parsedDates = this.parseDateRange(match[0]);
+          if (parsedDates) break;
+        }
+      }
+    }
+
+    if (!parsedDates) return null;
+
+    // Skip past events
+    const startDate = new Date(parsedDates.startDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (startDate < today) return null;
+
+    // Try to find venue name
+    let venueName: string | undefined;
+    const venuePatterns = [
+      /(?:venue|location|at the|held at|taking place at)[:\s]*([A-Z][A-Za-z\s&']+(?:Center|Arena|Hall|Hotel|Resort|Convention|Stadium|Expo|Complex|Pavilion|Civic|Building))/i,
+      /((?:Convention|Expo|Event)\s+(?:Center|Hall|Building))/i,
+    ];
+    for (const pattern of venuePatterns) {
+      const match = bodyText.match(pattern);
+      if (match) {
+        venueName = match[1].trim();
+        break;
+      }
+    }
+
+    // Try to find ticket pricing
+    let admissionPrice: string | undefined;
+    const priceMatch = bodyText.match(/\$(\d+(?:\.\d{2})?)/);
+    if (priceMatch) {
+      admissionPrice = `$${priceMatch[1]}`;
+    }
+
+    // Find image URL
+    let imageUrl: string | undefined;
+    const ogImage = $('meta[property="og:image"]').attr('content');
+    if (ogImage && ogImage.startsWith('http')) {
+      imageUrl = ogImage;
+    }
+
+    // Construct event name with year
+    const year = parsedDates.startDate.split('-')[0];
+    const name = `Collect-A-Con ${cityInfo.city} ${year}`;
+
+    const sourceId = `collectacon-${cityInfo.slug}-${year}`;
+
+    const raw: ScrapedShow = {
+      name,
+      description: `The Nation's Largest Trading Card & Pop Culture Convention featuring 900+ vendor tables with sports cards, Pokemon, Yu-Gi-Oh!, Magic: The Gathering, Funko POPs, comics, and more.`,
+      venueName,
+      city: cityInfo.city,
+      state: cityInfo.state,
+      startDate: parsedDates.startDate,
+      endDate: parsedDates.endDate,
+      admissionPrice,
+      eventType: 'convention',
+      isPokemonSpecific: false,
+      sourceId,
+      sourceName: this.sourceName,
+      sourceUrl: `${COLLECTACON_URL}${cityInfo.slug}/`,
+      websiteUrl: COLLECTACON_URL,
+      imageUrl,
+    };
+
+    const result = scrapedShowSchema.safeParse(raw);
+    if (result.success) {
+      return result.data;
+    }
+    console.warn(`[collectacon] Validation failed for "${name}":`, result.error.format());
     return null;
   }
 
   /**
-   * Generates a sourceId slug from an event name or URL.
+   * Try to fetch a page with puppeteer to render JS content.
    */
-  private generateSourceId(name: string, href?: string): string {
-    if (href) {
-      // Extract slug from URL path
-      try {
-        const url = new URL(href, COLLECTACON_URL);
-        const slug = url.pathname.replace(/^\/|\/$/g, '').replace(/\//g, '-');
-        if (slug) return slug;
-      } catch {
-        // Fall through to name-based slug
-      }
+  private async fetchRendered(url: string): Promise<string | null> {
+    let puppeteer;
+    try {
+      puppeteer = (await import('puppeteer')).default;
+    } catch {
+      console.warn('[collectacon] puppeteer not available');
+      return null;
     }
 
-    return name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
+    let browser;
+    try {
+      browser = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+      });
+
+      const page = await browser.newPage();
+      await page.setViewport({ width: 1280, height: 800 });
+
+      await page.goto(url, {
+        waitUntil: 'networkidle2',
+        timeout: 30_000,
+      });
+
+      // Wait a bit for dynamic content to render
+      await this.delay(2000);
+
+      return await page.content();
+    } catch (error) {
+      console.warn(`[collectacon] Puppeteer failed for ${url}:`, error);
+      return null;
+    } finally {
+      if (browser) {
+        await browser.close();
+      }
+    }
   }
 
   async scrape(): Promise<ScrapedShow[]> {
     console.log('[collectacon] Starting Collect-A-Con scraper...');
     const shows: ScrapedShow[] = [];
+    const seenIds = new Set<string>();
 
-    let html: string;
-    try {
-      html = await this.fetchPage(COLLECTACON_URL);
-    } catch (error) {
-      console.error('[collectacon] Failed to fetch page:', error);
-      return [];
+    // Strategy 1: Try direct fetch of city pages (cheaper, may work partially)
+    console.log('[collectacon] Trying direct fetch of city pages...');
+    for (const cityInfo of CITY_PAGES) {
+      const url = `${COLLECTACON_URL}${cityInfo.slug}/`;
+      try {
+        const html = await this.fetchPage(url);
+        const show = this.parseRenderedPage(html, cityInfo);
+        if (show && !seenIds.has(show.sourceId)) {
+          seenIds.add(show.sourceId);
+          shows.push(show);
+        }
+        await this.delay(500);
+      } catch {
+        // Will fall through to puppeteer strategy
+      }
     }
 
-    const $ = cheerio.load(html);
+    if (shows.length > 0) {
+      console.log(`[collectacon] Direct fetch found ${shows.length} shows`);
+      return shows;
+    }
 
-    // Collect-A-Con typically lists events in card-like sections or divs.
-    // We look for common patterns: event cards, sections with dates and locations.
-    const selectors = [
-      '.event-card',
-      '.event-item',
-      '.events-list .event',
-      '[class*="event"]',
-      'article',
-      '.wp-block-group',
-      'section',
-    ];
+    // Strategy 2: Use puppeteer to render JS-heavy pages
+    console.log('[collectacon] Direct fetch found nothing, trying puppeteer...');
 
-    const processedNames = new Set<string>();
+    let puppeteer;
+    try {
+      puppeteer = (await import('puppeteer')).default;
+    } catch {
+      console.warn('[collectacon] puppeteer not available — skipping puppeteer strategy');
+      return shows;
+    }
 
-    for (const selector of selectors) {
-      $(selector).each((_index, element) => {
-        try {
-          const $el = $(element);
-          const text = $el.text();
-
-          // Skip if too little content
-          if (text.length < 20) return;
-
-          // Try to find event name - look for headings or prominent text
-          let name = '';
-          const heading = $el.find('h1, h2, h3, h4, h5, h6').first();
-          if (heading.length) {
-            name = heading.text().trim();
-          }
-
-          // Skip non-event sections
-          if (!name || name.length < 3 || name.length > 200) return;
-          if (processedNames.has(name.toLowerCase())) return;
-
-          // Must contain "collect" or reference an event
-          const isRelevant =
-            /collect.?a.?con/i.test(name) ||
-            /collect.?a.?con/i.test(text) ||
-            /convention|expo|show/i.test(name);
-          if (!isRelevant) return;
-
-          // Find date information
-          const dateMatch = text.match(
-            /(?:[A-Za-z]+\s+\d{1,2}\s*[-–]\s*(?:[A-Za-z]+\s+)?\d{1,2},?\s*\d{4})|(?:[A-Za-z]+\s+\d{1,2},?\s*\d{4})/
-          );
-          if (!dateMatch) return;
-
-          const parsedDates = this.parseDateRange(dateMatch[0]);
-          if (!parsedDates) return;
-
-          // Find location
-          const locationMatch = text.match(
-            /([A-Z][a-z]+(?:\s[A-Z][a-z]+)*),\s*([A-Z]{2})\b/
-          );
-          if (!locationMatch) return;
-
-          const location = this.parseLocation(locationMatch[0]);
-          if (!location) return;
-
-          // Find link
-          const link = $el.find('a').first();
-          const href = link.attr('href') || '';
-
-          const sourceId = this.generateSourceId(name, href);
-          const sourceUrl = href
-            ? (href.startsWith('http') ? href : new URL(href, COLLECTACON_URL).toString())
-            : COLLECTACON_URL;
-
-          // Find image
-          const img = $el.find('img').first();
-          const imageUrl = img.attr('src') || undefined;
-
-          // Extract admission price
-          let admissionPrice: string | undefined;
-          const priceMatch = text.match(/(?:tickets?|admission|entry|general)[:\s]*\$(\d+(?:\.\d{2})?)/i)
-            || text.match(/\$(\d+(?:\.\d{2})?)\s*(?:general|admission|entry|per\s*person)/i);
-          if (priceMatch) {
-            admissionPrice = `$${priceMatch[1]}`;
-          } else if (/free\s*(?:admission|entry|event)/i.test(text)) {
-            admissionPrice = 'Free';
-          }
-
-          processedNames.add(name.toLowerCase());
-
-          const raw: ScrapedShow = {
-            name,
-            city: location.city,
-            state: location.state,
-            startDate: parsedDates.startDate,
-            endDate: parsedDates.endDate,
-            admissionPrice,
-            eventType: 'convention',
-            isPokemonSpecific: false,
-            sourceId,
-            sourceName: this.sourceName,
-            sourceUrl,
-            websiteUrl: COLLECTACON_URL,
-            imageUrl: imageUrl?.startsWith('http') ? imageUrl : undefined,
-          };
-
-          const result = scrapedShowSchema.safeParse(raw);
-          if (result.success) {
-            shows.push(result.data);
-          } else {
-            console.warn(
-              `[collectacon] Validation failed for "${name}":`,
-              result.error.format(),
-            );
-          }
-        } catch (error) {
-          console.warn('[collectacon] Error parsing element:', error);
-        }
+    let browser;
+    try {
+      browser = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
       });
 
-      // If we found shows with this selector, no need to try others
-      if (shows.length > 0) break;
+      for (const cityInfo of CITY_PAGES) {
+        const url = `${COLLECTACON_URL}${cityInfo.slug}/`;
+        try {
+          const page = await browser.newPage();
+          await page.setViewport({ width: 1280, height: 800 });
+
+          await page.goto(url, {
+            waitUntil: 'networkidle2',
+            timeout: 30_000,
+          });
+
+          // Wait for dynamic content
+          await this.delay(2000);
+
+          const html = await page.content();
+          await page.close();
+
+          const show = this.parseRenderedPage(html, cityInfo);
+          if (show && !seenIds.has(show.sourceId)) {
+            seenIds.add(show.sourceId);
+            shows.push(show);
+            console.log(`[collectacon] Found: ${show.name} on ${show.startDate}`);
+          }
+
+          // Rate limit
+          await this.delay(1000);
+        } catch (error) {
+          console.warn(`[collectacon] Failed to scrape ${cityInfo.slug}:`, error);
+        }
+      }
+    } catch (error) {
+      console.error('[collectacon] Browser launch failed:', error);
+    } finally {
+      if (browser) {
+        await browser.close();
+      }
     }
 
     console.log(`[collectacon] Total shows scraped: ${shows.length}`);

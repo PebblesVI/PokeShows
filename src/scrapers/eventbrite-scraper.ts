@@ -15,6 +15,10 @@ const SEARCH_QUERIES = [
   'trading-card-convention',
   'pokemon-convention',
   'card-collectors-show',
+  'sports-card-show',
+  'card-show',
+  'pokemon-tcg',
+  'card-collecting-event',
 ];
 
 const BASE_URL = 'https://www.eventbrite.com/d/united-states';
@@ -77,6 +81,50 @@ export class EventbriteScraper extends BaseScraper {
   readonly sourceName = 'eventbrite';
 
   /**
+   * Extracts a JSON object string starting from a given position by tracking
+   * balanced braces. This avoids the regex non-greedy problem where `{...}?`
+   * stops at the first `}` instead of the matching outer brace.
+   */
+  private extractBalancedJson(str: string, startIndex: number): string | null {
+    if (str[startIndex] !== '{') return null;
+
+    let depth = 0;
+    let inString = false;
+    let escape = false;
+
+    for (let i = startIndex; i < str.length; i++) {
+      const ch = str[i];
+
+      if (escape) {
+        escape = false;
+        continue;
+      }
+
+      if (ch === '\\' && inString) {
+        escape = true;
+        continue;
+      }
+
+      if (ch === '"') {
+        inString = !inString;
+        continue;
+      }
+
+      if (inString) continue;
+
+      if (ch === '{') depth++;
+      else if (ch === '}') {
+        depth--;
+        if (depth === 0) {
+          return str.substring(startIndex, i + 1);
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * Extract event data from the window.__SERVER_DATA__ script tag.
    */
   private extractEvents(html: string): EventbriteEvent[] {
@@ -89,11 +137,22 @@ export class EventbriteScraper extends BaseScraper {
       if (!content.includes('__SERVER_DATA__')) return;
 
       try {
-        // Extract the JSON object from: window.__SERVER_DATA__ = {...};
-        const match = content.match(/window\.__SERVER_DATA__\s*=\s*(\{[\s\S]*?\});?\s*(?:$|<\/script)/);
-        if (!match) return;
+        // Find the start of the JSON object after the assignment
+        const assignIdx = content.indexOf('__SERVER_DATA__');
+        if (assignIdx === -1) return;
 
-        const data = JSON.parse(match[1]);
+        const eqIdx = content.indexOf('=', assignIdx);
+        if (eqIdx === -1) return;
+
+        // Find the opening brace
+        const braceIdx = content.indexOf('{', eqIdx);
+        if (braceIdx === -1) return;
+
+        // Use balanced-brace extraction instead of non-greedy regex
+        const jsonStr = this.extractBalancedJson(content, braceIdx);
+        if (!jsonStr) return;
+
+        const data = JSON.parse(jsonStr);
 
         // Navigate to events — structure may vary
         const searchData = data?.search_data || data?.jsonBody?.search_data;
@@ -106,8 +165,8 @@ export class EventbriteScraper extends BaseScraper {
         if (Array.isArray(results)) {
           events.push(...results);
         }
-      } catch {
-        // JSON parse failed — try a more lenient approach
+      } catch (e) {
+        console.warn('[eventbrite] JSON parse error from __SERVER_DATA__:', e instanceof Error ? e.message : e);
       }
     });
 
@@ -116,29 +175,28 @@ export class EventbriteScraper extends BaseScraper {
       $('script[type="application/ld+json"]').each((_i, el) => {
         try {
           const jsonLd = JSON.parse($(el).html() || '');
-          if (Array.isArray(jsonLd)) {
-            for (const item of jsonLd) {
-              if (item['@type'] === 'Event') {
-                events.push({
-                  name: item.name,
-                  eid: item.url?.match(/(\d+)$/)?.[1],
-                  url: item.url,
-                  summary: item.description,
-                  start_date: item.startDate?.split('T')[0],
-                  end_date: item.endDate?.split('T')[0],
-                  primary_venue: item.location ? {
-                    name: item.location.name,
-                    address: {
-                      address_1: item.location.address?.streetAddress,
-                      city: item.location.address?.addressLocality,
-                      region: item.location.address?.addressRegion,
-                      postal_code: item.location.address?.postalCode,
-                      country: item.location.address?.addressCountry,
-                    },
-                  } : undefined,
-                  image: item.image ? { url: Array.isArray(item.image) ? item.image[0] : item.image } : undefined,
-                });
-              }
+          const items = Array.isArray(jsonLd) ? jsonLd : [jsonLd];
+          for (const item of items) {
+            if (item['@type'] === 'Event') {
+              events.push({
+                name: item.name,
+                eid: item.url?.match(/(\d+)$/)?.[1],
+                url: item.url,
+                summary: item.description,
+                start_date: item.startDate?.split('T')[0],
+                end_date: item.endDate?.split('T')[0],
+                primary_venue: item.location ? {
+                  name: item.location.name,
+                  address: {
+                    address_1: item.location.address?.streetAddress,
+                    city: item.location.address?.addressLocality,
+                    region: item.location.address?.addressRegion,
+                    postal_code: item.location.address?.postalCode,
+                    country: item.location.address?.addressCountry,
+                  },
+                } : undefined,
+                image: item.image ? { url: Array.isArray(item.image) ? item.image[0] : item.image } : undefined,
+              });
             }
           }
         } catch {
@@ -305,22 +363,27 @@ export class EventbriteScraper extends BaseScraper {
         allShows.push(show);
       }
 
-      // If first page had results, try page 2
+      // If first page had results, try subsequent pages (up to 5)
       if (events.length >= 10) {
-        await this.delay(2000);
-        const page2Events = await this.fetchSearchPage(query, 2);
-        console.log(`[eventbrite]   "${query}" page 2: ${page2Events.length} raw events`);
+        for (let page = 2; page <= 5; page++) {
+          await this.delay(1500);
+          const pageEvents = await this.fetchSearchPage(query, page);
+          console.log(`[eventbrite]   "${query}" page ${page}: ${pageEvents.length} raw events`);
 
-        for (const event of page2Events) {
-          if (!this.isRelevantEvent(event)) continue;
+          for (const event of pageEvents) {
+            if (!this.isRelevantEvent(event)) continue;
 
-          const show = this.toScrapedShow(event);
-          if (!show) continue;
+            const show = this.toScrapedShow(event);
+            if (!show) continue;
 
-          if (seenIds.has(show.sourceId)) continue;
-          seenIds.add(show.sourceId);
+            if (seenIds.has(show.sourceId)) continue;
+            seenIds.add(show.sourceId);
 
-          allShows.push(show);
+            allShows.push(show);
+          }
+
+          // Stop paginating if this page had few results
+          if (pageEvents.length < 10) break;
         }
       }
 

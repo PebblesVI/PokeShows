@@ -4,12 +4,48 @@ import { BaseScraper, scrapedShowSchema, type ScrapedShow } from './base-scraper
 
 const FLIPPIN_URL = 'https://flippincardshow.com/';
 
+/**
+ * Known show pages on flippincardshow.com.
+ * Discovered from the site navigation under "Special Shows".
+ * Updated when new shows are announced.
+ */
+const KNOWN_SHOW_PAGES = [
+  '/special-shows/bestflippincentralmass/',
+  '/special-shows/balt-tcg-april-2026/',
+  '/special-shows/tcg-boston-may-2026/',
+  '/special-shows/vineland-tcg-june2026/',
+  '/special-shows/bestflippinpolarpark/',
+  '/special-shows/tcgphilly/',
+  '/attendees/',
+];
+
+/**
+ * State abbreviation lookup from full names commonly used on the site.
+ */
+const STATE_MAP: Record<string, string> = {
+  'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR',
+  'california': 'CA', 'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE',
+  'florida': 'FL', 'georgia': 'GA', 'hawaii': 'HI', 'idaho': 'ID',
+  'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA', 'kansas': 'KS',
+  'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
+  'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN',
+  'mississippi': 'MS', 'missouri': 'MO', 'montana': 'MT', 'nebraska': 'NE',
+  'nevada': 'NV', 'new hampshire': 'NH', 'new jersey': 'NJ',
+  'new mexico': 'NM', 'new york': 'NY', 'north carolina': 'NC',
+  'north dakota': 'ND', 'ohio': 'OH', 'oklahoma': 'OK', 'oregon': 'OR',
+  'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
+  'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT',
+  'vermont': 'VT', 'virginia': 'VA', 'washington': 'WA',
+  'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY',
+};
+
+const US_STATE_CODES = new Set(Object.values(STATE_MAP));
+
 export class FlippinScraper extends BaseScraper {
   readonly sourceName = 'flippin';
 
   /**
    * Parses date strings in various formats.
-   * Handles: "March 14, 2026", "03/14/2026", "2026-03-14"
    */
   private parseDate(dateStr: string): string | null {
     const cleaned = dateStr.trim();
@@ -48,7 +84,7 @@ export class FlippinScraper extends BaseScraper {
    * Parses a date range string and returns start and end dates.
    */
   private parseDateRange(text: string): { startDate: string; endDate?: string } | null {
-    // "March 14-15, 2026"
+    // "April 11-12, 2026" or "April 11 - 12, 2026"
     const sameMonthRange = text.match(
       /([A-Za-z]+)\s+(\d{1,2})\s*[-–]\s*(\d{1,2}),?\s*(\d{4})/
     );
@@ -93,217 +129,381 @@ export class FlippinScraper extends BaseScraper {
     return null;
   }
 
+  /**
+   * Extracts state code from text containing city, state references.
+   * Handles both abbreviations ("Baltimore, MD") and full names ("Boston, Massachusetts").
+   */
+  private extractState(text: string): string | null {
+    // Try "City, ST" pattern
+    const abbrMatch = text.match(/,\s*([A-Z]{2})\b/);
+    if (abbrMatch && US_STATE_CODES.has(abbrMatch[1])) {
+      return abbrMatch[1];
+    }
+
+    // Try full state names
+    const lowerText = text.toLowerCase();
+    for (const [fullName, code] of Object.entries(STATE_MAP)) {
+      if (lowerText.includes(fullName)) {
+        return code;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Extracts city from text based on common patterns.
+   */
+  private extractCity(text: string): string | null {
+    // "Downtown Baltimore" -> "Baltimore"
+    const downtownMatch = text.match(/[Dd]owntown\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/);
+    if (downtownMatch) return downtownMatch[1];
+
+    // "City, ST" or "City, State"
+    const cityStateMatch = text.match(/([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?),\s*(?:[A-Z]{2}|[A-Z][a-z]+)/);
+    if (cityStateMatch) return cityStateMatch[1];
+
+    return null;
+  }
+
+  /**
+   * Discovers show page URLs from the navigation menu on the main site.
+   */
+  private async discoverShowPages(): Promise<string[]> {
+    const pages = new Set<string>(KNOWN_SHOW_PAGES);
+
+    try {
+      const html = await this.fetchPage(FLIPPIN_URL);
+      const $ = cheerio.load(html);
+
+      // Look for links to /special-shows/ paths in navigation
+      $('a[href*="/special-shows/"]').each((_i, el) => {
+        const href = $(el).attr('href');
+        if (href) {
+          try {
+            const url = new URL(href, FLIPPIN_URL);
+            pages.add(url.pathname);
+          } catch {
+            // ignore invalid URLs
+          }
+        }
+      });
+
+      // Also look for any navigation links containing show-related keywords
+      $('a').each((_i, el) => {
+        const href = $(el).attr('href') || '';
+        const text = $(el).text().toLowerCase();
+        if (
+          (text.includes('show') || text.includes('event') || text.includes('tcg')) &&
+          href.includes('flippincardshow.com')
+        ) {
+          try {
+            const url = new URL(href);
+            if (url.pathname !== '/' && !pages.has(url.pathname)) {
+              pages.add(url.pathname);
+            }
+          } catch {
+            // ignore
+          }
+        }
+      });
+    } catch (error) {
+      console.warn('[flippin] Failed to discover show pages:', error);
+    }
+
+    return Array.from(pages);
+  }
+
+  /**
+   * Parses event details from an individual show page.
+   * These pages are HTML content that typically includes the event name,
+   * dates, venue, location, and pricing in visible text.
+   */
+  private parseShowPage(html: string, pageUrl: string): ScrapedShow | null {
+    const $ = cheerio.load(html);
+    const bodyText = $('body').text();
+    const title = $('title').text() || '';
+
+    // Combine all text sources
+    const ogTitle = $('meta[property="og:title"]').attr('content') || '';
+    const ogDesc = $('meta[property="og:description"]').attr('content') || '';
+    const allText = `${title} ${ogTitle} ${ogDesc} ${bodyText}`;
+
+    // Must look like a card show page
+    if (!/card\s*show|flippin|tcg|trading\s*card|pokemon|pokémon/i.test(allText)) {
+      return null;
+    }
+
+    // Extract dates
+    let parsedDates: { startDate: string; endDate?: string } | null = null;
+
+    // Try date range patterns first
+    const dateRangePatterns = [
+      /([A-Za-z]+)\s+(\d{1,2})\s*[-–]\s*(\d{1,2}),?\s*(\d{4})/,
+      /([A-Za-z]+)\s+(\d{1,2})\s*[-–]\s*([A-Za-z]+)\s+(\d{1,2}),?\s*(\d{4})/,
+    ];
+
+    for (const pattern of dateRangePatterns) {
+      const match = allText.match(pattern);
+      if (match) {
+        parsedDates = this.parseDateRange(match[0]);
+        if (parsedDates) break;
+      }
+    }
+
+    // Fall back to single date
+    if (!parsedDates) {
+      const singleMatch = allText.match(/([A-Za-z]+)\s+(\d{1,2}),?\s*(\d{4})/);
+      if (singleMatch) {
+        parsedDates = this.parseDateRange(singleMatch[0]);
+      }
+    }
+
+    // Also try navigation-style dates like "03-07-26"
+    if (!parsedDates) {
+      const navDate = pageUrl.match(/(\d{1,2})-(\d{1,2})-(\d{2,4})$/);
+      if (navDate) {
+        const year = navDate[3].length === 2 ? `20${navDate[3]}` : navDate[3];
+        const dateStr = `${year}-${navDate[1].padStart(2, '0')}-${navDate[2].padStart(2, '0')}`;
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+          parsedDates = { startDate: dateStr };
+        }
+      }
+    }
+
+    if (!parsedDates) return null;
+
+    // Skip past events
+    const startDate = new Date(parsedDates.startDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (startDate < today) return null;
+
+    // Extract location
+    const state = this.extractState(allText);
+    if (!state) return null;
+
+    let city = this.extractCity(allText);
+
+    // Known city mappings from page URLs
+    if (!city) {
+      const slugCityMap: Record<string, string> = {
+        'balt': 'Baltimore',
+        'baltimore': 'Baltimore',
+        'boston': 'Boston',
+        'vineland': 'Vineland',
+        'philly': 'Philadelphia',
+        'philadelphia': 'Philadelphia',
+        'polar': 'Worcester',
+        'polarpark': 'Worcester',
+        'centralmass': 'Worcester',
+        'holycross': 'Worcester',
+        'woburn': 'Woburn',
+      };
+
+      const lowerUrl = pageUrl.toLowerCase();
+      for (const [key, value] of Object.entries(slugCityMap)) {
+        if (lowerUrl.includes(key)) {
+          city = value;
+          break;
+        }
+      }
+    }
+
+    if (!city) return null;
+
+    // Extract event name
+    let name = ogTitle || title;
+    // Clean up the title
+    name = name.replace(/\s*[-|]\s*The Best Flippin.*$/i, '').trim();
+    if (!name || name.length < 5) {
+      name = `Best Flippin' Card Show ${city}`;
+    }
+
+    // Extract venue name
+    let venueName: string | undefined;
+    const venuePatterns = [
+      /(?:at|venue)[:\s]+(?:the\s+)?([A-Z][A-Za-z\s&']+(?:Center|Arena|Hall|Hotel|Resort|Convention|Stadium|Park|Plaza|Church|Campus))/i,
+      /((?:Convention|Expo|Event|Hynes|Campus)\s+(?:Center|Hall|Building))/i,
+      /(Polar Park)/i,
+      /(Crowne Plaza[A-Za-z\s]*)/i,
+      /(College of[A-Za-z\s]+)/i,
+    ];
+    for (const pattern of venuePatterns) {
+      const match = bodyText.match(pattern);
+      if (match) {
+        venueName = match[1].trim();
+        break;
+      }
+    }
+
+    // Extract admission price
+    let admissionPrice: string | undefined;
+    const pricePatterns = [
+      /(?:general\s*admission|GA)[:\s]*\$(\d+)/i,
+      /(?:admission|entry|ticket)[:\s]*\$(\d+)/i,
+      /\$(\d+)\s*(?:for\s*)?(?:general|admission|GA|entry)/i,
+    ];
+    for (const pattern of pricePatterns) {
+      const match = bodyText.match(pattern);
+      if (match) {
+        admissionPrice = `$${match[1]}`;
+        break;
+      }
+    }
+    if (!admissionPrice && /free\s*(?:admission|entry|event)/i.test(bodyText)) {
+      admissionPrice = 'Free';
+    }
+
+    // Extract hours
+    let startTime: string | undefined;
+    let endTime: string | undefined;
+    const hoursMatch = bodyText.match(/(\d{1,2})\s*(?::00)?\s*([AP]M)\s*[-–]\s*(\d{1,2})\s*(?::00)?\s*([AP]M)/i);
+    if (hoursMatch) {
+      startTime = `${hoursMatch[1]}:00 ${hoursMatch[2].toUpperCase()}`;
+      endTime = `${hoursMatch[3]}:00 ${hoursMatch[4].toUpperCase()}`;
+    }
+
+    // Image
+    let imageUrl: string | undefined;
+    const ogImage = $('meta[property="og:image"]').attr('content');
+    if (ogImage && ogImage.startsWith('http')) {
+      imageUrl = ogImage;
+    }
+
+    // Generate source ID from URL path
+    const slug = pageUrl.replace(/^\/|\/$/g, '').replace(/\//g, '-') || 'flippin-main';
+    const year = parsedDates.startDate.split('-')[0];
+    const sourceId = `flippin-${slug}-${year}`;
+
+    const fullUrl = new URL(pageUrl, FLIPPIN_URL).toString();
+
+    const raw: ScrapedShow = {
+      name,
+      city,
+      state,
+      startDate: parsedDates.startDate,
+      endDate: parsedDates.endDate,
+      venueName,
+      address: undefined,
+      admissionPrice,
+      startTime,
+      endTime,
+      eventType: 'card_show',
+      isPokemonSpecific: false,
+      sourceId,
+      sourceName: this.sourceName,
+      sourceUrl: fullUrl,
+      websiteUrl: FLIPPIN_URL,
+      imageUrl,
+    };
+
+    const result = scrapedShowSchema.safeParse(raw);
+    if (result.success) {
+      return result.data;
+    }
+    console.warn(`[flippin] Validation failed for "${name}":`, result.error.format());
+    return null;
+  }
+
+  /**
+   * Parses the /attendees/ page which lists the regular monthly shows
+   * at the Woburn venue along with a schedule of upcoming dates.
+   */
+  private parseAttendeesPage(html: string): ScrapedShow[] {
+    const shows: ScrapedShow[] = [];
+    const $ = cheerio.load(html);
+    const bodyText = $('body').text();
+
+    // The attendees page mentions monthly shows at the Woburn venue.
+    // Look for "Monthly Mixer" style dates
+    const dateRegex = /(?:Saturday|Sunday),?\s*([A-Za-z]+)\s+(\d{1,2}),?\s*(\d{4})/gi;
+    const monthlyDates = Array.from(bodyText.matchAll(dateRegex));
+
+    const seenDates = new Set<string>();
+
+    for (const match of monthlyDates) {
+      const dateStr = `${match[1]} ${match[2]}, ${match[3]}`;
+      try {
+        const parsed = parse(dateStr, 'MMMM d, yyyy', new Date());
+        const formatted = format(parsed, 'yyyy-MM-dd');
+
+        // Skip past dates
+        const startDate = new Date(formatted);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (startDate < today) continue;
+
+        if (seenDates.has(formatted)) continue;
+        seenDates.add(formatted);
+
+        const raw: ScrapedShow = {
+          name: `Best Flippin' Monthly Mixer - ${match[1]} ${match[3]}`,
+          city: 'Woburn',
+          state: 'MA',
+          venueName: 'Crowne Plaza Hotel Woburn',
+          startDate: formatted,
+          startTime: '10:00 AM',
+          endTime: '3:00 PM',
+          eventType: 'card_show',
+          isPokemonSpecific: false,
+          sourceId: `flippin-monthly-${formatted}`,
+          sourceName: this.sourceName,
+          sourceUrl: `${FLIPPIN_URL}attendees/`,
+          websiteUrl: FLIPPIN_URL,
+        };
+
+        const result = scrapedShowSchema.safeParse(raw);
+        if (result.success) {
+          shows.push(result.data);
+        }
+      } catch {
+        // Skip invalid dates
+      }
+    }
+
+    return shows;
+  }
+
   async scrape(): Promise<ScrapedShow[]> {
     console.log('[flippin] Starting Flippin Card Show scraper...');
     const shows: ScrapedShow[] = [];
+    const seenIds = new Set<string>();
 
-    let html: string;
-    try {
-      html = await this.fetchPage(FLIPPIN_URL);
-    } catch (error) {
-      console.error('[flippin] Failed to fetch page:', error);
-      return [];
-    }
+    // Discover all show pages from navigation
+    const showPages = await this.discoverShowPages();
+    console.log(`[flippin] Found ${showPages.length} potential show pages`);
 
-    const $ = cheerio.load(html);
-
-    // Squarespace sites typically use structured blocks for events.
-    // Common patterns: .sqs-block, .summary-item, .eventlist-event,
-    // or JSON-LD structured data.
-    const processedIds = new Set<string>();
-
-    // Strategy 1: Look for JSON-LD structured data (common in Squarespace)
-    $('script[type="application/ld+json"]').each((_index, script) => {
+    // Fetch and parse each show page
+    for (const pagePath of showPages) {
       try {
-        const jsonText = $(script).html();
-        if (!jsonText) return;
+        const url = new URL(pagePath, FLIPPIN_URL).toString();
+        const html = await this.fetchPage(url);
 
-        const data = JSON.parse(jsonText);
-        const events = Array.isArray(data) ? data : data['@type'] === 'Event' ? [data] : [];
-
-        for (const event of events) {
-          if (event['@type'] !== 'Event') continue;
-
-          const name = event.name?.trim();
-          if (!name) continue;
-
-          const startDate = event.startDate
-            ? format(new Date(event.startDate), 'yyyy-MM-dd')
-            : null;
-          if (!startDate) continue;
-
-          const endDate = event.endDate
-            ? format(new Date(event.endDate), 'yyyy-MM-dd')
-            : undefined;
-
-          const location = event.location;
-          let city = '';
-          let state = '';
-          let venueName: string | undefined;
-          let address: string | undefined;
-
-          if (location) {
-            venueName = location.name;
-            if (location.address) {
-              city = location.address.addressLocality || '';
-              state = location.address.addressRegion || '';
-              address = location.address.streetAddress;
+        // Special handling for the attendees page which lists monthly shows
+        if (pagePath.includes('attendees')) {
+          const monthlyShows = this.parseAttendeesPage(html);
+          for (const show of monthlyShows) {
+            if (!seenIds.has(show.sourceId)) {
+              seenIds.add(show.sourceId);
+              shows.push(show);
             }
           }
-
-          if (!city || !state) continue;
-
-          // Extract price from JSON-LD offers
-          let admissionPrice: string | undefined;
-          if (event.offers) {
-            const offers = Array.isArray(event.offers) ? event.offers : [event.offers];
-            for (const offer of offers) {
-              if (offer.price === '0' || offer.price === 0) {
-                admissionPrice = 'Free';
-                break;
-              }
-              if (offer.price) {
-                admissionPrice = `$${offer.price}`;
-                break;
-              }
-            }
-          }
-
-          const sourceId = name
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-|-$/g, '');
-
-          if (processedIds.has(sourceId)) continue;
-          processedIds.add(sourceId);
-
-          const raw: ScrapedShow = {
-            name,
-            city,
-            state: state.length === 2 ? state.toUpperCase() : state,
-            startDate,
-            endDate,
-            venueName,
-            address,
-            admissionPrice,
-            eventType: 'card_show',
-            isPokemonSpecific: false,
-            sourceId,
-            sourceName: this.sourceName,
-            sourceUrl: event.url || FLIPPIN_URL,
-            websiteUrl: FLIPPIN_URL,
-          };
-
-          const result = scrapedShowSchema.safeParse(raw);
-          if (result.success) {
-            shows.push(result.data);
-          }
+          continue;
         }
-      } catch {
-        // JSON parse failed, continue to other strategies
-      }
-    });
 
-    // Strategy 2: Parse Squarespace event list blocks
-    if (shows.length === 0) {
-      const eventSelectors = [
-        '.eventlist-event',
-        '.summary-item',
-        '.sqs-block-content',
-        '[data-block-type]',
-        '.index-section',
-      ];
+        // Parse individual show page
+        const show = this.parseShowPage(html, pagePath);
+        if (show && !seenIds.has(show.sourceId)) {
+          seenIds.add(show.sourceId);
+          shows.push(show);
+          console.log(`[flippin] Found: ${show.name} on ${show.startDate} in ${show.city}, ${show.state}`);
+        }
 
-      for (const selector of eventSelectors) {
-        $(selector).each((_index, element) => {
-          try {
-            const $el = $(element);
-            const text = $el.text();
-
-            if (text.length < 15) return;
-
-            // Find heading for event name
-            let name = '';
-            const heading = $el.find('h1, h2, h3, h4, .eventlist-title, .summary-title').first();
-            if (heading.length) {
-              name = heading.text().trim();
-            }
-
-            if (!name || name.length < 3) return;
-
-            // Must look like a card show / event
-            const isRelevant =
-              /card\s*show|flippin|trading\s*card|collector|sport/i.test(text);
-            if (!isRelevant) return;
-
-            // Find dates
-            const dateText = $el.find('.eventlist-datetag, .summary-metadata-item--date, time').text() || text;
-            const dateMatch = dateText.match(
-              /(?:[A-Za-z]+\s+\d{1,2}\s*[-–]\s*(?:[A-Za-z]+\s+)?\d{1,2},?\s*\d{4})|(?:[A-Za-z]+\s+\d{1,2},?\s*\d{4})/
-            );
-            if (!dateMatch) return;
-
-            const parsedDates = this.parseDateRange(dateMatch[0]);
-            if (!parsedDates) return;
-
-            // Find location (City, ST pattern)
-            const locationMatch = text.match(
-              /([A-Z][a-z]+(?:\s[A-Z][a-z]+)*),\s*([A-Z]{2})\b/
-            );
-            if (!locationMatch) return;
-
-            const city = locationMatch[1].trim();
-            const state = locationMatch[2];
-
-            // Extract admission price from text
-            let admissionPrice: string | undefined;
-            const priceMatch = text.match(/(?:admission|entry|fee|price|ticket)[:\s]*\$(\d+(?:\.\d{2})?)/i)
-              || text.match(/\$(\d+(?:\.\d{2})?)\s*(?:admission|entry|per\s*person)/i);
-            if (priceMatch) {
-              admissionPrice = `$${priceMatch[1]}`;
-            } else if (/free\s*(?:admission|entry|event)/i.test(text)) {
-              admissionPrice = 'Free';
-            }
-
-            const sourceId = name
-              .toLowerCase()
-              .replace(/[^a-z0-9]+/g, '-')
-              .replace(/^-|-$/g, '');
-
-            if (processedIds.has(sourceId)) return;
-            processedIds.add(sourceId);
-
-            const link = $el.find('a').first();
-            const href = link.attr('href') || '';
-            const sourceUrl = href
-              ? (href.startsWith('http') ? href : new URL(href, FLIPPIN_URL).toString())
-              : FLIPPIN_URL;
-
-            const raw: ScrapedShow = {
-              name,
-              city,
-              state,
-              startDate: parsedDates.startDate,
-              endDate: parsedDates.endDate,
-              admissionPrice,
-              eventType: 'card_show',
-              isPokemonSpecific: false,
-              sourceId,
-              sourceName: this.sourceName,
-              sourceUrl,
-              websiteUrl: FLIPPIN_URL,
-            };
-
-            const result = scrapedShowSchema.safeParse(raw);
-            if (result.success) {
-              shows.push(result.data);
-            }
-          } catch (error) {
-            console.warn('[flippin] Error parsing element:', error);
-          }
-        });
-
-        if (shows.length > 0) break;
+        // Rate limit
+        await this.delay(500);
+      } catch (error) {
+        console.warn(`[flippin] Failed to fetch ${pagePath}:`, error);
       }
     }
 

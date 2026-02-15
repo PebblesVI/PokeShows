@@ -1,5 +1,10 @@
 const API_BASE = 'https://api.pokemontcg.io/v2';
 
+// Known counts as of Feb 2026 — used as defaults to avoid a slow count API call
+const DEFAULT_TOTAL_COUNT = 20113;
+const DEFAULT_HOLO_COUNT = 3000;
+const FETCH_TIMEOUT_MS = 10000; // 10s timeout for all API calls
+
 export interface PokemonTcgCard {
   id: string;
   name: string;
@@ -39,6 +44,13 @@ function getHeaders(): Record<string, string> {
   return headers;
 }
 
+function fetchWithTimeout(url: string, options: RequestInit & { next?: { revalidate?: number } } = {}): Promise<Response> {
+  return fetch(url, {
+    ...options,
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+  });
+}
+
 // Module-level cache for card counts (refreshes once per server restart / ~1h on serverless)
 let cachedTotalCount: number | null = null;
 let cachedHoloCount: number | null = null;
@@ -49,13 +61,17 @@ async function getCachedTotalCount(): Promise<number> {
   if (cachedTotalCount && Date.now() - countCacheTime < COUNT_CACHE_TTL) {
     return cachedTotalCount;
   }
-  const response = await fetch(`${API_BASE}/cards?pageSize=1&select=id`, {
-    headers: getHeaders(),
-  });
-  const data: ApiResponse = await response.json();
-  cachedTotalCount = data.totalCount;
-  countCacheTime = Date.now();
-  return cachedTotalCount;
+  try {
+    const response = await fetchWithTimeout(`${API_BASE}/cards?pageSize=1&select=id`, {
+      headers: getHeaders(),
+    });
+    const data: ApiResponse = await response.json();
+    cachedTotalCount = data.totalCount;
+    countCacheTime = Date.now();
+    return cachedTotalCount;
+  } catch {
+    return cachedTotalCount ?? DEFAULT_TOTAL_COUNT;
+  }
 }
 
 const HOLO_QUERY = 'rarity:"Rare Holo" OR rarity:"Rare Holo EX" OR rarity:"Rare Holo GX" OR rarity:"Rare Holo V" OR rarity:"Rare Holo VMAX" OR rarity:"Rare Holo VSTAR"';
@@ -64,28 +80,37 @@ async function getCachedHoloCount(): Promise<number> {
   if (cachedHoloCount && Date.now() - countCacheTime < COUNT_CACHE_TTL) {
     return cachedHoloCount;
   }
-  const params = new URLSearchParams({ q: HOLO_QUERY, pageSize: '1', select: 'id' });
-  const response = await fetch(`${API_BASE}/cards?${params}`, {
-    headers: getHeaders(),
-  });
-  const data: ApiResponse = await response.json();
-  cachedHoloCount = data.totalCount;
-  return cachedHoloCount;
+  try {
+    const params = new URLSearchParams({ q: HOLO_QUERY, pageSize: '1', select: 'id' });
+    const response = await fetchWithTimeout(`${API_BASE}/cards?${params}`, {
+      headers: getHeaders(),
+    });
+    const data: ApiResponse = await response.json();
+    cachedHoloCount = data.totalCount;
+    return cachedHoloCount;
+  } catch {
+    return cachedHoloCount ?? DEFAULT_HOLO_COUNT;
+  }
 }
 
 export async function getTotalCardCount(): Promise<number> {
   return getCachedTotalCount();
 }
 
-export async function getRandomCards(count = 25): Promise<PokemonTcgCard[]> {
+export async function getRandomCards(count = 10): Promise<PokemonTcgCard[]> {
   const totalCount = await getCachedTotalCount();
   const totalPages = Math.ceil(totalCount / count);
   const randomPage = Math.floor(Math.random() * totalPages) + 1;
 
-  const response = await fetch(
+  const response = await fetchWithTimeout(
     `${API_BASE}/cards?page=${randomPage}&pageSize=${count}`,
     { headers: getHeaders() }
   );
+
+  if (!response.ok) {
+    throw new Error(`Pokemon TCG API returned ${response.status}`);
+  }
+
   const data: ApiResponse = await response.json();
 
   if (!data.data || data.data.length === 0) {
@@ -103,12 +128,12 @@ export async function getRandomCards(count = 25): Promise<PokemonTcgCard[]> {
 }
 
 export async function getRandomCard(): Promise<PokemonTcgCard> {
-  const cards = await getRandomCards(25);
+  const cards = await getRandomCards(10);
   return cards[0];
 }
 
 export async function getCardById(id: string): Promise<PokemonTcgCard> {
-  const response = await fetch(`${API_BASE}/cards/${id}`, {
+  const response = await fetchWithTimeout(`${API_BASE}/cards/${id}`, {
     headers: getHeaders(),
     next: { revalidate: 86400 },
   });
@@ -123,7 +148,7 @@ export async function searchCards(query: string, limit = 20): Promise<{ cards: P
     orderBy: '-tcgplayer.prices.holofoil.market',
   });
 
-  const response = await fetch(`${API_BASE}/cards?${params}`, {
+  const response = await fetchWithTimeout(`${API_BASE}/cards?${params}`, {
     headers: getHeaders(),
     next: { revalidate: 3600 },
   });
@@ -152,7 +177,7 @@ interface SetApiResponse {
 }
 
 export async function getAllSets(): Promise<PokemonTcgSet[]> {
-  const response = await fetch(`${API_BASE}/sets?orderBy=-releaseDate&pageSize=250`, {
+  const response = await fetchWithTimeout(`${API_BASE}/sets?orderBy=-releaseDate&pageSize=250`, {
     headers: getHeaders(),
     next: { revalidate: 86400 },
   });
@@ -164,7 +189,7 @@ export async function getAllSets(): Promise<PokemonTcgSet[]> {
 }
 
 export async function getSetById(setId: string): Promise<PokemonTcgSet | null> {
-  const response = await fetch(`${API_BASE}/sets/${setId}`, {
+  const response = await fetchWithTimeout(`${API_BASE}/sets/${setId}`, {
     headers: getHeaders(),
     next: { revalidate: 86400 },
   });
@@ -182,7 +207,7 @@ export async function getCardsBySet(setId: string, limit = 50): Promise<PokemonT
     orderBy: 'number',
   });
 
-  const response = await fetch(`${API_BASE}/cards?${params}`, {
+  const response = await fetchWithTimeout(`${API_BASE}/cards?${params}`, {
     headers: getHeaders(),
     next: { revalidate: 3600 },
   });
@@ -204,7 +229,7 @@ export async function searchCardsAdvanced(
     orderBy: sort,
   });
 
-  const response = await fetch(`${API_BASE}/cards?${params}`, {
+  const response = await fetchWithTimeout(`${API_BASE}/cards?${params}`, {
     headers: getHeaders(),
     next: { revalidate: 3600 },
   });
@@ -217,7 +242,7 @@ export async function searchCardsAdvanced(
   return { cards: data.data || [], totalCount: data.totalCount };
 }
 
-export async function getRandomHoloCards(count = 25): Promise<PokemonTcgCard[]> {
+export async function getRandomHoloCards(count = 10): Promise<PokemonTcgCard[]> {
   const totalCount = await getCachedHoloCount();
 
   if (totalCount === 0) {
@@ -232,9 +257,14 @@ export async function getRandomHoloCards(count = 25): Promise<PokemonTcgCard[]> 
     pageSize: String(count),
   });
 
-  const response = await fetch(`${API_BASE}/cards?${params}`, {
+  const response = await fetchWithTimeout(`${API_BASE}/cards?${params}`, {
     headers: getHeaders(),
   });
+
+  if (!response.ok) {
+    throw new Error(`Pokemon TCG API returned ${response.status}`);
+  }
+
   const data: ApiResponse = await response.json();
 
   if (!data.data || data.data.length === 0) {
@@ -251,6 +281,6 @@ export async function getRandomHoloCards(count = 25): Promise<PokemonTcgCard[]> 
 }
 
 export async function getRandomHoloCard(): Promise<PokemonTcgCard> {
-  const cards = await getRandomHoloCards(25);
+  const cards = await getRandomHoloCards(10);
   return cards[0];
 }
