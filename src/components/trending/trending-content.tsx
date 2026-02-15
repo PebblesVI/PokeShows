@@ -30,9 +30,21 @@ interface WishlistedCard {
   wishlistCount: number;
 }
 
+interface FeaturedCard {
+  pokemonTcgId: string;
+  cardName: string;
+  setName: string;
+  imageSmall: string;
+  imageLarge: string;
+  rarity: string | null;
+  marketPrice: number;
+  priceVariant: string | null;
+}
+
 interface TrendingData {
   gainers: TrendingCard[];
   losers: TrendingCard[];
+  featuredCards: FeaturedCard[];
   mostWishlisted: WishlistedCard[];
   updatedAt: string;
 }
@@ -236,6 +248,66 @@ function WishlistCard({ card }: { card: WishlistedCard }) {
   );
 }
 
+function FeaturedCardComponent({ card }: { card: FeaturedCard }) {
+  const slug = card.cardName && card.setName ? cardToSlug(card.cardName, card.setName) : null;
+  const ebayUrl = buildEbaySearchUrl({
+    searchQuery: `pokemon ${card.cardName} ${card.setName}`,
+    customId: `trending-featured-${card.pokemonTcgId}`,
+  });
+  const tcgPlayerUrl = buildTcgPlayerSearchUrl(`${card.cardName} ${card.setName}`);
+
+  return (
+    <div className="rounded-xl border border-border p-4 transition-all duration-200 hover:border-primary/30 hover:shadow-sm">
+      <div className="flex gap-4">
+        <CardImage src={card.imageSmall} alt={card.cardName} />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              {slug ? (
+                <Link href={`/buy/${slug}`} className="text-sm font-semibold hover:text-primary transition-colors truncate block">
+                  {card.cardName}
+                </Link>
+              ) : (
+                <p className="text-sm font-semibold truncate">{card.cardName}</p>
+              )}
+              <p className="text-xs text-muted-foreground truncate">{card.setName}</p>
+            </div>
+            {card.rarity && (
+              <Badge variant="secondary" className="shrink-0">
+                {card.rarity}
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-2 mt-2">
+            <span className="text-sm font-bold">${card.marketPrice.toFixed(2)}</span>
+            {card.priceVariant && (
+              <span className="text-xs text-muted-foreground">({card.priceVariant})</span>
+            )}
+          </div>
+          <div className="flex items-center gap-3 mt-2">
+            <a
+              href={ebayUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+            >
+              Buy Now on eBay <ExternalLink className="h-3 w-3" />
+            </a>
+            <a
+              href={tcgPlayerUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-700 rounded-full px-2.5 py-0.5 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+            >
+              TCGPlayer <ExternalLink className="h-3 w-3" />
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function EmptyState() {
   return (
     <div className="text-center py-16 rounded-xl border border-border">
@@ -306,8 +378,9 @@ export function TrendingContent() {
 
   const hasGainers = data && data.gainers.length > 0;
   const hasLosers = data && data.losers.length > 0;
+  const hasFeatured = data && data.featuredCards && data.featuredCards.length > 0;
   const hasWishlisted = data && data.mostWishlisted.length > 0;
-  const hasAnyData = hasGainers || hasLosers || hasWishlisted;
+  const hasAnyData = hasGainers || hasLosers || hasFeatured || hasWishlisted;
 
   return (
     <div>
@@ -325,6 +398,28 @@ export function TrendingContent() {
 
       {!hasAnyData ? (
         <EmptyState />
+      ) : hasFeatured && !hasGainers && !hasLosers ? (
+        <>
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold mb-2">Featured Pokemon Cards</h2>
+            <p className="text-muted-foreground">Recently featured cards with current market prices.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {data!.featuredCards.map((card) => (
+              <FeaturedCardComponent key={card.pokemonTcgId} card={card} />
+            ))}
+          </div>
+          {hasWishlisted && (
+            <div className="mt-12">
+              <h2 className="text-2xl font-bold mb-6">Most Wishlisted</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {data!.mostWishlisted.map((card) => (
+                  <WishlistCard key={card.pokemonTcgId} card={card} />
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       ) : (
         <Tabs defaultValue="gainers">
           <TabsList className="mb-6">

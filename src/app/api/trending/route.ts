@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { cardPriceHistory, cardOfTheDay, wishlistAlerts } from '@/db/schema';
-import { sql, asc } from 'drizzle-orm';
+import { sql, asc, desc } from 'drizzle-orm';
 import { format, subDays } from 'date-fns';
 
 export const dynamic = 'force-dynamic';
@@ -14,6 +14,17 @@ interface TrendingCard {
   previousPrice: number;
   currentPrice: number;
   changePercent: number;
+}
+
+interface FeaturedCard {
+  pokemonTcgId: string;
+  cardName: string;
+  setName: string;
+  imageSmall: string;
+  imageLarge: string;
+  rarity: string | null;
+  marketPrice: number;
+  priceVariant: string | null;
 }
 
 interface WishlistedCard {
@@ -139,6 +150,36 @@ export async function GET(_request: NextRequest) {
         };
       });
 
+    // When no price movement data, show recently featured cards
+    let featuredCards: FeaturedCard[] = [];
+    if (gainers.length === 0 && losers.length === 0) {
+      const recent = await db.select({
+        pokemonTcgId: cardOfTheDay.pokemonTcgId,
+        cardName: cardOfTheDay.cardName,
+        setName: cardOfTheDay.setName,
+        imageSmall: cardOfTheDay.imageSmall,
+        imageLarge: cardOfTheDay.imageLarge,
+        rarity: cardOfTheDay.rarity,
+        tcgPlayerPrice: cardOfTheDay.tcgPlayerPrice,
+        priceVariant: cardOfTheDay.priceVariant,
+      })
+        .from(cardOfTheDay)
+        .where(sql`${cardOfTheDay.tcgPlayerPrice} IS NOT NULL`)
+        .orderBy(desc(cardOfTheDay.featuredDate))
+        .limit(20);
+
+      featuredCards = recent.map(r => ({
+        pokemonTcgId: r.pokemonTcgId,
+        cardName: r.cardName,
+        setName: r.setName,
+        imageSmall: r.imageSmall,
+        imageLarge: r.imageLarge,
+        rarity: r.rarity,
+        marketPrice: r.tcgPlayerPrice!,
+        priceVariant: r.priceVariant,
+      }));
+    }
+
     // Most wishlisted: count occurrences across all wishlistAlerts cardIds
     const allWishlists = await db.select({
       cardIds: wishlistAlerts.cardIds,
@@ -203,6 +244,7 @@ export async function GET(_request: NextRequest) {
     return NextResponse.json({
       gainers,
       losers,
+      featuredCards,
       mostWishlisted,
       updatedAt: new Date().toISOString(),
     });
